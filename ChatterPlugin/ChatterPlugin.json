@@ -1,0 +1,13 @@
+{
+  "Author": "James Keesey",
+  "Name": "Chatter Plugin",
+  "Punchline": "Saves and filters chat dialog.",
+  "Description": "Does stuff",
+  "InternalName": "chatterPlugin",
+  "ApplicableVersion": "any",
+  "Tags": [
+    "chat",
+    "plugin",
+    "cats"
+  ]
+}
