@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Dalamud.Game.Text;
 
@@ -17,7 +16,7 @@ internal class ChatTypeHelper
         {XivChatType.ErrorMessage, "errorMessage"},
         {XivChatType.NPCDialogue, "npcDialogue"},
         {XivChatType.NPCDialogueAnnouncements, "npcDialogueAnnouncements"},
-        {XivChatType.RetainerSale, "retainerSale"},
+        {XivChatType.RetainerSale, "retainerSale"}
         // {(XivChatType)72, "recruiting"},
         // {(XivChatType)76, "playlist"},
         // {(XivChatType)2105, "retainerAdd"},

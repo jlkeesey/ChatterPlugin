@@ -23,9 +23,12 @@ public sealed class ChatManager : IDisposable
         XivChatType xivType, uint senderId, ref SeString seSender, ref SeString seMessage, ref bool isHandled)
     {
         var type = CleanUpType(xivType);
-        var sender = CleanUpSender(seSender);
-        var message = CleanUpMessage(seMessage);
-        LogChatMessage(type, sender, message);
+        if (type != string.Empty)
+        {
+            var sender = CleanUpSender(seSender);
+            var message = CleanUpMessage(seMessage);
+            LogChatMessage(type, sender, message);
+        }
     }
 
     private static string CleanUpType(XivChatType xivType)
@@ -49,6 +52,5 @@ public sealed class ChatManager : IDisposable
     private void LogChatMessage(string type, string sender, string message)
     {
         chatter.ChatLogManager[ChatLogManager.AllLogPrefix].WriteLine($"{type}:{sender}:{message}");
-        chatter.ChatLogManager["friends"].WriteLine($"{type}:{sender}:{message}");
     }
 }
