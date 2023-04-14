@@ -1,19 +1,18 @@
 using System;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Logging;
 
 namespace ChatterPlugin;
 
 public sealed class ChatManager : IDisposable
 {
+    private readonly Chatter chatter;
+
     public ChatManager(Chatter plugin)
     {
         chatter = plugin;
         Dalamud.Chat.ChatMessage += HandleChatMessage;
     }
-
-    private readonly Chatter chatter;
 
     public void Dispose()
     {
@@ -50,8 +49,6 @@ public sealed class ChatManager : IDisposable
     private void LogChatMessage(string type, string sender, string message)
     {
         chatter.ChatLogManager[ChatLogManager.AllLogPrefix].WriteLine($"{type}:{sender}:{message}");
-        chatter.ChatLogManager[ChatLogManager.AllLogPrefix].Flush();
-        chatter.Settings.Log.WriteLine($"{type}:{sender}:{message}");
-        chatter.Settings.Log.Flush();
+        chatter.ChatLogManager["friends"].WriteLine($"{type}:{sender}:{message}");
     }
 }

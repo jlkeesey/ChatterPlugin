@@ -1,5 +1,4 @@
 using System.Reflection;
-using ChatterPlugin.Attributes;
 using ChatterPlugin.Windows;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
@@ -20,8 +19,6 @@ public sealed partial class Chatter : IDalamudPlugin
             Version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "";
 
             Configuration = Configuration.Load();
-
-            Settings = new Settings();
 
             WindowSystem = new WindowSystem(Name);
 
@@ -51,7 +48,6 @@ public sealed partial class Chatter : IDalamudPlugin
 
     public ChatManager ChatManager { get; private set; }
     public ChatLogManager ChatLogManager { get; private set; }
-    public Settings Settings { get; private set; }
     public WindowSystem WindowSystem { get; private set; }
     public string Name => "ChatterPlugin";
 

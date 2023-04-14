@@ -25,34 +25,19 @@ public sealed class ChatLogManager : IDisposable
 {
     public const string AllLogPrefix = "all";
 
-    private readonly Dictionary<string, LogEntry> logs = new()
-    {
-        {
-            AllLogPrefix, new LogEntry(AllLogPrefix)
-        }
-    };
+    private readonly Dictionary<string, ChatLog> logs = new();
 
     private string logDirectory = string.Empty;
     private string logFileNamePrefix = string.Empty;
+    private DateTime logStartTime = DateTime.Now;
 
-    public StreamWriter this[string index]
+    public ChatLog this[string index]
     {
         get
         {
             UpdateConfigValues();
-            if (!logs.ContainsKey(index)) logs[index] = new LogEntry(index);
-
-            var entry = logs[index];
-            if (entry.Log == StreamWriter.Null)
-            {
-                entry.FileName =
-                    FileHelper.FullFileNameWithDateTime(logDirectory, $"{logFileNamePrefix}-{entry.Prefix}",
-                                                        FileHelper.LogFileExtension);
-                FileHelper.EnsureDirectoryExists(logDirectory);
-                entry.Log = new StreamWriter(entry.FileName);
-            }
-
-            return entry.Log;
+            if (!logs.ContainsKey(index)) logs[index] = new ChatLog(this, index);
+            return logs[index].Open();
         }
     }
 
@@ -69,35 +54,77 @@ public sealed class ChatLogManager : IDisposable
             CloseLogs();
             logDirectory = Chatter.Configuration.LogDirectory;
             logFileNamePrefix = Chatter.Configuration.LogFileNamePrefix;
+            logStartTime = DateTime.Now;
         }
     }
 
     public void DumpLogs()
     {
+        PluginLog.Log("Prefix        Open   Path");
+        PluginLog.Log("------------  -----  ----");
         foreach (var (_, entry) in logs)
-            PluginLog.Log($"{entry.Prefix}: {entry.Log != StreamWriter.Null}  '{entry.FileName}'");
+            entry.DumpLog();
     }
 
     private void CloseLogs()
     {
         foreach (var (_, entry) in logs)
-            if (entry.Log != StreamWriter.Null)
-            {
-                entry.Log.Close();
-                entry.Log = StreamWriter.Null;
-                entry.FileName = string.Empty;
-            }
+            entry.Close();
     }
 
-    private class LogEntry
+    public sealed class ChatLog : IDisposable
     {
-        public readonly string Prefix;
-        public string FileName = string.Empty;
-        public StreamWriter Log = StreamWriter.Null;
+        private readonly ChatLogManager manager;
 
-        public LogEntry(string prefix)
+        public ChatLog(ChatLogManager chatLogManager, string prefix)
         {
+            manager = chatLogManager;
             Prefix = prefix;
+        }
+
+        public string Prefix { get; init; }
+        public string FileName { get; private set; } = string.Empty;
+        private StreamWriter Log { get; set; } = StreamWriter.Null;
+
+        public void Dispose()
+        {
+            Close();
+        }
+
+        public void WriteLine(string line)
+        {
+            Log.WriteLine(line);
+            Log.Flush();
+        }
+
+        public ChatLog Open()
+        {
+            if (Log == StreamWriter.Null)
+            {
+                FileName =
+                    FileHelper.FullFileNameWithDateTime(manager.logDirectory, $"{manager.logFileNamePrefix}-{Prefix}",
+                                                        FileHelper.LogFileExtension,
+                                                        manager.logStartTime);
+                FileHelper.EnsureDirectoryExists(manager.logDirectory);
+                Log = new StreamWriter(FileName);
+            }
+
+            return this;
+        }
+
+        public void Close()
+        {
+            if (Log != StreamWriter.Null)
+            {
+                Log.Close();
+                Log = StreamWriter.Null;
+                FileName = string.Empty;
+            }
+        }
+
+        public void DumpLog()
+        {
+            PluginLog.Log($"{Prefix,-12}  {Log != StreamWriter.Null,-5}  '{FileName}'");
         }
     }
 }

@@ -7,7 +7,7 @@ namespace ChatterPlugin.Windows;
 
 public sealed class MainWindow : Window, IDisposable
 {
-    private const string title = "Chatter";
+    private const string Title = "Chatter";
 
     private bool visible;
 
@@ -20,7 +20,7 @@ public sealed class MainWindow : Window, IDisposable
     private readonly Chatter chatter;
 
     public MainWindow(Chatter chatter) : base(
-        title, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
+        Title, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
     {
         SizeConstraints = new WindowSizeConstraints
         {
@@ -40,7 +40,7 @@ public sealed class MainWindow : Window, IDisposable
             return;
         }
 
-        if (ImGui.Begin(title, ref visible))
+        if (ImGui.Begin(Title, ref visible))
         {
             ImGui.Text($"The config path is '{Chatter.Configuration.LogDirectory}' ");
 
