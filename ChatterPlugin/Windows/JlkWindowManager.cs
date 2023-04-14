@@ -3,28 +3,28 @@ using Dalamud.Interface.Windowing;
 
 namespace ChatterPlugin.Windows;
 
-public sealed class PluginWindowManager : IDisposable
+public sealed class JlkWindowManager : IDisposable
 {
     private readonly ConfigWindow configWindow;
     private readonly MainWindow mainWindow;
-    private readonly Plugin plugin;
+    private readonly Chatter chatter;
 
-    public PluginWindowManager(Plugin plugin)
+    public JlkWindowManager(Chatter chatter)
     {
-        this.plugin = plugin;
+        this.chatter = chatter;
 
-        configWindow = Add(new ConfigWindow(plugin));
-        mainWindow = Add(new MainWindow(plugin));
+        configWindow = Add(new ConfigWindow());
+        mainWindow = Add(new MainWindow(chatter));
 
-        Dalamud.PluginInterface.UiBuilder.Draw += plugin.WindowSystem.Draw;
+        Dalamud.PluginInterface.UiBuilder.Draw += chatter.WindowSystem.Draw;
         // this.PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
     }
 
     public void Dispose()
     {
-        Dalamud.PluginInterface.UiBuilder.Draw -= plugin.WindowSystem.Draw;
+        Dalamud.PluginInterface.UiBuilder.Draw -= chatter.WindowSystem.Draw;
 
-        plugin.WindowSystem.RemoveAllWindows();
+        chatter.WindowSystem.RemoveAllWindows();
 
         mainWindow.Dispose();
         configWindow.Dispose();
@@ -42,7 +42,7 @@ public sealed class PluginWindowManager : IDisposable
 
     private TType Add<TType>(TType window) where TType : Window
     {
-        plugin.WindowSystem.AddWindow(window);
+        chatter.WindowSystem.AddWindow(window);
         return window;
     }
 }

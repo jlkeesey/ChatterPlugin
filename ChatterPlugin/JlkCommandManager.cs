@@ -12,7 +12,7 @@ namespace ChatterPlugin
     /// Registers all of the slash commands in the given class.
     /// </summary>
     /// <typeparam name="THost">The class type containing the commands.</typeparam>
-    public class PluginCommandManager<THost> : IDisposable
+    public class JlkCommandManager<THost> : IDisposable
     {
         private readonly (string, CommandInfo)[] pluginCommands;
         private readonly THost host;
@@ -22,7 +22,7 @@ namespace ChatterPlugin
         /// </summary>
         /// <param name="host">The class that contains the slash command definitions.</param>
         /// <exception cref="ArgumentNullException">If any of the parameters are null.</exception>
-        public PluginCommandManager(THost host)
+        public JlkCommandManager(THost host)
         {
             this.host = host ?? throw new ArgumentNullException(nameof(host));
 

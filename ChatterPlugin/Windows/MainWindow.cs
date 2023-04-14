@@ -17,9 +17,9 @@ public sealed class MainWindow : Window, IDisposable
         set => visible = value;
     }
 
-    private readonly Plugin plugin;
+    private readonly Chatter chatter;
 
-    public MainWindow(Plugin plugin) : base(
+    public MainWindow(Chatter chatter) : base(
         title, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
     {
         SizeConstraints = new WindowSizeConstraints
@@ -28,7 +28,7 @@ public sealed class MainWindow : Window, IDisposable
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
         };
 
-        this.plugin = plugin;
+        this.chatter = chatter;
     }
 
     public void Dispose() { }
@@ -42,7 +42,7 @@ public sealed class MainWindow : Window, IDisposable
 
         if (ImGui.Begin(title, ref visible))
         {
-            ImGui.Text($"The config path is '{plugin.Configuration.LogDirectory}' ");
+            ImGui.Text($"The config path is '{Chatter.Configuration.LogDirectory}' ");
 
             ImGui.Spacing();
 

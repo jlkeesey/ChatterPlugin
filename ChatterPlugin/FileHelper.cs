@@ -90,7 +90,7 @@ internal class FileHelper
         var parent = Path.GetDirectoryName(directory);
         if (Directory.Exists(parent))
             return CreateDirectory(directory);
-        PluginLog.LogError("Directory parent dow not exist: {0}", directory);
+        PluginLog.LogError("Directory parent not exist: {0}", directory);
         // TODO Add handling for this case. Preferably not allow getting here.
         return string.Empty;
     }

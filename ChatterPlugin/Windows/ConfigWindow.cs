@@ -7,7 +7,7 @@ namespace ChatterPlugin.Windows;
 
 public sealed class ConfigWindow : Window, IDisposable
 {
-    private const string title = "Chatter Configuration";
+    private const string Title = "Chatter Configuration";
     private bool visible;
 
     public bool Visible
@@ -18,7 +18,7 @@ public sealed class ConfigWindow : Window, IDisposable
 
     private readonly Configuration configuration;
 
-    public ConfigWindow(Plugin plugin) : base(title)
+    public ConfigWindow() : base(Title)
     {
         SizeConstraints = new WindowSizeConstraints
         {
@@ -26,7 +26,7 @@ public sealed class ConfigWindow : Window, IDisposable
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
         };
 
-        configuration = plugin.Configuration;
+        configuration = Chatter.Configuration;
     }
 
     public void Dispose() { }
@@ -38,7 +38,7 @@ public sealed class ConfigWindow : Window, IDisposable
             return;
         }
 
-        if (ImGui.Begin(title, ref visible))
+        if (ImGui.Begin(Title, ref visible))
         {
             var filePath = configuration.LogDirectory;
             if (ImGui.InputText("Save directory", ref filePath, 256))

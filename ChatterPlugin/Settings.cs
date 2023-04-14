@@ -13,41 +13,52 @@ namespace ChatterPlugin;
 /// </remarks>
 public sealed class Settings : IDisposable
 {
-    private readonly Configuration configuration;
-
     private StreamWriter log = StreamWriter.Null;
 
     private string logDirectory = string.Empty;
     private string logFileName = string.Empty;
     private string logFileNamePrefix = string.Empty;
 
-    public Settings(Configuration configuration)
+    public string LogDirectory
     {
-        this.configuration = configuration;
+        get
+        {
+            if (Chatter.Configuration.LogDirectory != logDirectory)
+            {
+                CloseLog();
+                logFileName = string.Empty;
+                logDirectory = Chatter.Configuration.LogDirectory;
+            }
+
+            return logDirectory;
+        }
+    }
+
+    public string LogFileNamePrefix
+    {
+        get
+        {
+            if (Chatter.Configuration.LogFileNamePrefix != logFileNamePrefix)
+            {
+                CloseLog();
+                logFileName = string.Empty;
+                logFileNamePrefix = Chatter.Configuration.LogFileNamePrefix;
+            }
+
+            return logFileNamePrefix;
+        }
     }
 
     public string LogFileName
     {
         get
         {
-            if (configuration.LogFileNamePrefix != logFileNamePrefix)
-            {
-                CloseLog();
-                logFileName = string.Empty;
-                logFileNamePrefix = configuration.LogFileNamePrefix;
-            }
-
-            if (configuration.LogDirectory != logDirectory)
-            {
-                CloseLog();
-                logFileName = string.Empty;
-                logDirectory = configuration.LogDirectory;
-            }
-
+            var directory = LogDirectory;   // Side effect
+            var prefix = LogFileNamePrefix; // Side effect
             if (logFileName == string.Empty)
             {
                 logFileName =
-                    FileHelper.FullFileNameWithDateTime(logDirectory, logFileNamePrefix, FileHelper.LogFileExtension);
+                    FileHelper.FullFileNameWithDateTime(directory, prefix, FileHelper.LogFileExtension);
             }
 
             return logFileName;
@@ -63,8 +74,8 @@ public sealed class Settings : IDisposable
         {
             if (log == StreamWriter.Null)
             {
-                FileHelper.EnsureDirectoryExists(logDirectory);
-                PluginLog.Log("@@@@ Created log directory '{0}'", logDirectory);
+                FileHelper.EnsureDirectoryExists(LogDirectory);
+                PluginLog.Log("@@@@ Log directory exists '{0}'", LogDirectory);
                 log = new StreamWriter(LogFileName);
                 PluginLog.Log("@@@@ Created log file '{0}'", LogFileName);
             }

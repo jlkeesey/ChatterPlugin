@@ -22,6 +22,12 @@ public class Configuration : IPluginConfiguration
     /// </summary>
     public string LogFileNamePrefix { get; set; } = "chatter";
 
+#if DEBUG
+    public bool IsDebug { get; set; } = true;
+#else
+    public bool IsDebug { get; set; } = false;
+#endif
+
     public int Version { get; set; } = 1;
 
     /// <summary>
