@@ -72,7 +72,7 @@ public sealed class ChatLogManager : IDisposable
             entry.Close();
     }
 
-    public sealed class ChatLog : IDisposable
+    public class ChatLog : IDisposable
     {
         private readonly ChatLogManager manager;
 
@@ -89,6 +89,17 @@ public sealed class ChatLogManager : IDisposable
         public void Dispose()
         {
             Close();
+        }
+
+        protected bool ShouldLog(string type, string sender, string message)
+        {
+            return true;
+        }
+
+        public void LogInfo(string type, string sender, string message)
+        {
+            if (ShouldLog(type, sender, message))
+                WriteLine($"{type}:{sender}:{message}");
         }
 
         public void WriteLine(string line)
