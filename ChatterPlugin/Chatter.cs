@@ -22,8 +22,8 @@ public sealed partial class Chatter : IDalamudPlugin
 
             WindowSystem = new WindowSystem(Name);
 
-            ChatManager = new ChatManager(this);
             ChatLogManager = new ChatLogManager();
+            ChatManager = new ChatManager(ChatLogManager);
 
             // you might normally want to embed resources and load them from the manifest stream
             // var imagePath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");

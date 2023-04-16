@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 
@@ -7,11 +6,11 @@ namespace ChatterPlugin;
 
 public sealed class ChatManager : IDisposable
 {
-    private readonly Chatter chatter;
+    private readonly ChatLogManager logManager;
 
-    public ChatManager(Chatter plugin)
+    public ChatManager(ChatLogManager logManager)
     {
-        chatter = plugin;
+        this.logManager = logManager;
         Dalamud.Chat.ChatMessage += HandleChatMessage;
     }
 
@@ -23,18 +22,9 @@ public sealed class ChatManager : IDisposable
     private void HandleChatMessage(
         XivChatType xivType, uint senderId, ref SeString seSender, ref SeString seMessage, ref bool isHandled)
     {
-        var type = CleanUpType(xivType);
-        if (type != string.Empty && Chatter.Configuration.ChatTypeFilterFlags.GetValueOrDefault(xivType, false))
-        {
-            var sender = CleanUpSender(seSender);
-            var message = CleanUpMessage(seMessage);
-            LogChatMessage(type, sender, message);
-        }
-    }
-
-    private static string CleanUpType(XivChatType xivType)
-    {
-        return ChatTypeHelper.TypeToName(xivType);
+        var sender = CleanUpSender(seSender);
+        var message = CleanUpMessage(seMessage);
+        logManager.LogInfo(xivType, senderId, sender, message);
     }
 
     private static string CleanUpMessage(SeString seMessage)
@@ -55,24 +45,18 @@ public sealed class ChatManager : IDisposable
         return message;
     }
 
-    private static string CleanUpSender(SeString sender)
+    private static string CleanUpSender(SeString seSender)
     {
-        var name = sender.TextValue;
-        while (name.Length > 0 && !char.IsLetter(name[0])) name = name[1..];
-        while (name.Length > 0 && !char.IsLetter(name[^1])) name = name[..^1];
+        var sender = seSender.TextValue;
+        while (sender.Length > 0 && !char.IsLetter(sender[0])) sender = sender[1..];
+        while (sender.Length > 0 && !char.IsLetter(sender[^1])) sender = sender[..^1];
         foreach (var server in DataCenter.Servers)
-            if (name.EndsWith(server))
+            if (sender.EndsWith(server))
             {
-                name = name.Insert(name.Length - server.Length, "@");
+                sender = sender.Insert(sender.Length - server.Length, "@");
                 break;
             }
 
-        return name;
-    }
-
-    private void LogChatMessage(string type, string sender, string message)
-    {
-        // \ue05d is the flower character used to separate names from servers
-        chatter.ChatLogManager[ChatLogManager.AllLogPrefix].LogInfo(type, sender, message);
+        return sender;
     }
 }

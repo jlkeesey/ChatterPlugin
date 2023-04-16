@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Dalamud.Configuration;
 using Dalamud.Game.Text;
 
@@ -15,6 +14,67 @@ namespace ChatterPlugin;
 [Serializable]
 public class Configuration : IPluginConfiguration
 {
+    public const string AllLogName = "all";
+
+    public sealed class ChatLogConfiguration
+    {
+        public readonly Dictionary<XivChatType, bool> ChatTypeFilterFlags = new();
+
+        public ChatLogConfiguration(
+            string name, bool isActive = false, bool includeServer = false, bool includeAll = false)
+        {
+            Name = name;
+            IsActive = isActive;
+            IncludeServer = includeServer;
+            DebugIncludeAllMessages = includeAll;
+        }
+
+        /// <summary>
+        ///     The name of this group. Will be part of the log file name.
+        /// </summary>
+        public string Name { get; init; }
+
+        /// <summary>
+        ///     Whether this log is active and writing out to the file.
+        /// </summary>
+        public bool IsActive { get; set; }
+
+        /// <summary>
+        ///     If this is true then server names are included in the output, otherwise they are stripped from
+        ///     the output, both in the name column as well as the message.
+        /// </summary>
+        public bool IncludeServer { get; set; }
+
+        /// <summary>
+        /// When true all messages get written to this log including ones that normally would be filtered out.
+        /// </summary>
+        public bool DebugIncludeAllMessages { get; set; }
+
+        /// <summary>
+        ///     The set of users to include.
+        /// </summary>
+        /// <remarks>
+        ///     The key is the full name of the user to include, if the value is not string.Empty, it what the user's
+        ///     name should be renamed in the output. If this is empty, then all users are included.
+        /// </remarks>
+        public SortedDictionary<string, string> Users { get; init; } = new SortedDictionary<string, string>();
+
+        /// <summary>
+        ///     Initializes the enabled chat type flags.
+        /// </summary>
+        /// <remarks>
+        ///     This has two purposes. The first is to set the default flags for this object. The second is to
+        ///     set any new chat types that did not exist is previously created configuration. Serialization will
+        ///     do that to you.
+        /// </remarks>
+        public void InitializeTypeFlags()
+        {
+            ChatTypeFilterFlags.Clear(); // TODO remove this once setup is working
+            foreach (var type in DefaultEnabledTypes)
+                ChatTypeFilterFlags.TryAdd(type, true);
+        }
+    }
+
     /// <summary>
     ///     The directory to write all logs to. This directory may not exist.
     /// </summary>
@@ -25,7 +85,10 @@ public class Configuration : IPluginConfiguration
     /// </summary>
     public string LogFileNamePrefix { get; set; } = "chatter";
 
-    public readonly Dictionary<XivChatType, bool> ChatTypeFilterFlags = new();
+    /// <summary>
+    ///     The configurations for the individual chat logs.
+    /// </summary>
+    public Dictionary<string, ChatLogConfiguration> ChatLogs { get; set; } = new();
 
 #if DEBUG
     public bool IsDebug { get; set; } = true;
@@ -48,22 +111,21 @@ public class Configuration : IPluginConfiguration
         if (Dalamud.PluginInterface.GetPluginConfig() is not Configuration config) config = new Configuration();
         // else
         // {
-        //     // Add migration here
+        //     Add migration here
         // }
 
-        InitializeTypeFlags(config);
+        if (!config.ChatLogs.ContainsKey(AllLogName))
+        {
+            config.ChatLogs[AllLogName] = new ChatLogConfiguration(AllLogName, isActive: true);
+        }
+
+        foreach (var (_, chatLogConfiguration) in config.ChatLogs) chatLogConfiguration.InitializeTypeFlags();
+
         config.Save();
         return config;
     }
 
-    private static void InitializeTypeFlags(Configuration config)
-    {
-        config.ChatTypeFilterFlags.Clear();  // TODO remove this once setup is working
-        foreach (var type in DefaultEnabledTypes)
-            config.ChatTypeFilterFlags.TryAdd(type, true);
-    }
-
-    private static List<XivChatType> DefaultEnabledTypes = new()
+    private static readonly List<XivChatType> DefaultEnabledTypes = new()
     {
         XivChatType.Say,
         XivChatType.TellOutgoing,
@@ -93,6 +155,6 @@ public class Configuration : IPluginConfiguration
         XivChatType.CrossLinkShell5,
         XivChatType.CrossLinkShell6,
         XivChatType.CrossLinkShell7,
-        XivChatType.CrossLinkShell8,
+        XivChatType.CrossLinkShell8
     };
 }
