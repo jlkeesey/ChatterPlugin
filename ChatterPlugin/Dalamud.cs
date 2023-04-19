@@ -1,3 +1,4 @@
+using Dalamud.Data;
 using Dalamud.Game.ClientState;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui;

@@ -39,7 +39,12 @@ public sealed class ChatLogManager : IDisposable
     public ChatLog GetLog(Configuration.ChatLogConfiguration cfg)
     {
         UpdateConfigValues();
-        if (!logs.ContainsKey(cfg.Name)) logs[cfg.Name] = new ChatLog(this, cfg);
+        if (!logs.ContainsKey(cfg.Name))
+        {
+            logs[cfg.Name] = cfg.Name == Configuration.AllLogName
+                                 ? new AllChatLog(this, cfg)
+                                 : new GroupChatLog(this, cfg);
+        }
 
         return logs[cfg.Name].Open();
     }
@@ -83,9 +88,9 @@ public sealed class ChatLogManager : IDisposable
             GetLog(configurationChatLog).LogInfo(xivType, senderId, sender, message);
     }
 
-    public class ChatLog : IDisposable
+    public abstract class ChatLog : IDisposable
     {
-        private readonly Configuration.ChatLogConfiguration config;
+        protected readonly Configuration.ChatLogConfiguration config;
         private readonly ChatLogManager manager;
 
         public ChatLog(ChatLogManager chatLogManager, Configuration.ChatLogConfiguration configuration)
@@ -109,16 +114,15 @@ public sealed class ChatLogManager : IDisposable
         /// <param name="xivType">The chat type (say, tell, shout, etc.)</param>
         /// <param name="typeLabel">The string version of the chat type. Might be string.Empty.</param>
         /// <param name="senderId">The id of the sender.</param>
-        /// <param name="s"></param>
         /// <param name="sender">The name of the sender. This may include a server name separated by and @ sign.</param>
+        /// <param name="cleanedSender">The cleaned sender which may have the server removed or have been renamed.</param>
         /// <param name="message">The text of chat. User names in the message may include a server name separated by and @ sign.</param>
-        /// <returns></returns>
-        protected bool ShouldLog(
+        /// <returns>Returns true if this message should be logged.</returns>
+        protected virtual bool ShouldLog(
             XivChatType xivType, string typeLabel, uint senderId, string sender, string cleanedSender, string message)
         {
             if (!config.IsActive) return false;
             if (config.DebugIncludeAllMessages) return true;
-            if (config.Users.Count != 0 && !config.Users.ContainsKey(cleanedSender)) return false;
             return !typeLabel.IsNullOrEmpty() && config.ChatTypeFilterFlags.GetValueOrDefault(xivType, false);
         }
 
@@ -144,12 +148,9 @@ public sealed class ChatLogManager : IDisposable
             }
         }
 
-        protected void WriteLog(
+        protected abstract void WriteLog(
             XivChatType xivType, string typeLabel, uint senderId, string sender, string cleanedSender, string message,
-            string cleanedMessage)
-        {
-            WriteLine($"{typeLabel}:{cleanedSender}:{cleanedMessage}");
-        }
+            string cleanedMessage);
 
         private static string CleanUpMessage(string message)
         {
@@ -175,7 +176,7 @@ public sealed class ChatLogManager : IDisposable
             if (!config.IncludeServer)
             {
                 var index = sender.LastIndexOf('@');
-                if (index == -1) cleanedSender = cleanedSender.Remove(index);
+                if (index != -1) cleanedSender = cleanedSender.Remove(index);
             }
 
             var replacementUser = config.Users.GetValueOrDefault(cleanedSender, string.Empty);
@@ -219,6 +220,39 @@ public sealed class ChatLogManager : IDisposable
         public void DumpLog()
         {
             PluginLog.Log($"{config.Name,-12}  {Log != StreamWriter.Null,-5}  '{FileName}'");
+        }
+    }
+
+    public class GroupChatLog : ChatLog
+    {
+        public GroupChatLog(ChatLogManager chatLogManager, Configuration.ChatLogConfiguration configuration) : base(
+            chatLogManager, configuration) { }
+
+        protected override bool ShouldLog(
+            XivChatType xivType, string typeLabel, uint senderId, string sender, string cleanedSender, string message)
+        {
+            return base.ShouldLog(xivType, typeLabel, senderId, sender, cleanedSender, message) &&
+                   config.Users.ContainsKey(cleanedSender);
+        }
+
+        protected override void WriteLog(
+            XivChatType xivType, string typeLabel, uint senderId, string sender, string cleanedSender, string message,
+            string cleanedMessage)
+        {
+            WriteLine($"{cleanedSender}   {cleanedMessage}");
+        }
+    }
+
+    public class AllChatLog : ChatLog
+    {
+        public AllChatLog(ChatLogManager chatLogManager, Configuration.ChatLogConfiguration configuration) : base(
+            chatLogManager, configuration) { }
+
+        protected override void WriteLog(
+            XivChatType xivType, string typeLabel, uint senderId, string sender, string cleanedSender, string message,
+            string cleanedMessage)
+        {
+            WriteLine($"{typeLabel}:{cleanedSender}:{cleanedMessage}");
         }
     }
 }
