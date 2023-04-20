@@ -1,0 +1,26 @@
+﻿namespace ChatterPlugin;
+
+/// <summary>
+///     Information about the player running this plugin.
+/// </summary>
+public class Myself
+{
+    private static string? _name;
+    private static string? _homeWorld;
+
+    /// <summary>
+    ///     The player character's name.
+    /// </summary>
+    public static string Name
+    {
+        get { return _name ??= Dalamud.ClientState.LocalPlayer?.Name.TextValue ?? "Who am I?"; }
+    }
+
+    /// <summary>
+    ///     The player character's home world.
+    /// </summary>
+    public static string HomeWorld
+    {
+        get { return _homeWorld ??= Dalamud.ClientState.LocalPlayer?.HomeWorld.GameData?.Name ?? "Where am I?"; }
+    }
+}

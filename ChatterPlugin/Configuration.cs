@@ -16,17 +16,25 @@ public class Configuration : IPluginConfiguration
 {
     public const string AllLogName = "all";
 
+    /// <summary>
+    ///     The configuration for a single chat log.
+    /// </summary>
     public sealed class ChatLogConfiguration
     {
+        /// <summary>
+        ///     The include/exclude flags for each ChatType.
+        /// </summary>
         public readonly Dictionary<XivChatType, bool> ChatTypeFilterFlags = new();
 
         public ChatLogConfiguration(
-            string name, bool isActive = false, bool includeServer = false, bool includeAll = false)
+            string name, bool isActive = false, bool includeServer = false, bool includeAll = false,
+            string? format = null)
         {
             Name = name;
             IsActive = isActive;
             IncludeServer = includeServer;
             DebugIncludeAllMessages = includeAll;
+            Format = format;
         }
 
         /// <summary>
@@ -46,9 +54,54 @@ public class Configuration : IPluginConfiguration
         public bool IncludeServer { get; set; }
 
         /// <summary>
-        /// When true all messages get written to this log including ones that normally would be filtered out.
+        ///     When true all messages get written to this log including ones that normally would be filtered out.
         /// </summary>
         public bool DebugIncludeAllMessages { get; set; }
+
+        /// <summary>
+        ///     The format string to use for formatting the messages.
+        /// </summary>
+        /// <remarks>
+        ///     Every message will use this format pattern to format the message that is logged. If this is null then the default
+        ///     depends on the type of chat log. Below is the list of replacement parameters that are permitted.
+        ///     <list type="table">
+        ///         <listheader>
+        ///             <term>Replacement</term>
+        ///             <description>Description</description>
+        ///         </listheader>
+        ///         <item>
+        ///             <term>{0}</term>
+        ///             <description>The long chat type name.</description>
+        ///         </item>
+        ///         <item>
+        ///             <term>{1}</term>
+        ///             <description>The short chat type name.</description>
+        ///         </item>
+        ///         <item>
+        ///             <term>{2}</term>
+        ///             <description>
+        ///                 The long sender name. This will include the world name if different from the user. This is
+        ///                 without any name replacement.
+        ///             </description>
+        ///         </item>
+        ///         <item>
+        ///             <term>{3}</term>
+        ///             <description>The short sender name. This may have the world remove and will have any replacements done.</description>
+        ///         </item>
+        ///         <item>
+        ///             <term>{4}</term>
+        ///             <description>The unmodified text of the chat message.</description>
+        ///         </item>
+        ///         <item>
+        ///             <term>{5}</term>
+        ///             <description>
+        ///                 The cleaned text of the chat message. This may have the world names removed and will have any
+        ///                 name replacements.
+        ///             </description>
+        ///         </item>
+        ///     </list>
+        /// </remarks>
+        public string? Format { get; set; }
 
         /// <summary>
         ///     The set of users to include.
@@ -57,7 +110,7 @@ public class Configuration : IPluginConfiguration
         ///     The key is the full name of the user to include, if the value is not string.Empty, it what the user's
         ///     name should be renamed in the output. If this is empty, then all users are included.
         /// </remarks>
-        public SortedDictionary<string, string> Users { get; init; } = new SortedDictionary<string, string>();
+        public SortedDictionary<string, string> Users { get; init; } = new();
 
         /// <summary>
         ///     Initializes the enabled chat type flags.
@@ -106,6 +159,10 @@ public class Configuration : IPluginConfiguration
         Dalamud.PluginInterface.SavePluginConfig(this);
     }
 
+    /// <summary>
+    ///     Loads the most recently saved configuration or creates a new one.
+    /// </summary>
+    /// <returns>The configuration to use.</returns>
     public static Configuration Load()
     {
         if (Dalamud.PluginInterface.GetPluginConfig() is not Configuration config) config = new Configuration();
@@ -115,9 +172,7 @@ public class Configuration : IPluginConfiguration
         // }
 
         if (!config.ChatLogs.ContainsKey(AllLogName))
-        {
-            config.ChatLogs[AllLogName] = new ChatLogConfiguration(AllLogName, isActive: true);
-        }
+            config.ChatLogs[AllLogName] = new ChatLogConfiguration(AllLogName, true);
 
         foreach (var (_, chatLogConfiguration) in config.ChatLogs) chatLogConfiguration.InitializeTypeFlags();
 
@@ -125,6 +180,10 @@ public class Configuration : IPluginConfiguration
         return config;
     }
 
+
+    /// <summary>
+    ///     These chat type should all be enabled by default on new configurations.
+    /// </summary>
     private static readonly List<XivChatType> DefaultEnabledTypes = new()
     {
         XivChatType.Say,

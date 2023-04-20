@@ -17,50 +17,50 @@ public sealed partial class Chatter
     private const string DebugChatDump = "chatdump";
     private const string DebugList = "list";
 
-    private readonly Dictionary<string, CommandInfo> commands = new();
+    private readonly Dictionary<string, CommandInfo> _commands = new();
 
-    private readonly Dictionary<string, Func<bool>> debugFlags = new()
+    private readonly Dictionary<string, Func<bool>> _debugFlags = new()
     {
         {"debug", () => Configuration.IsDebug}
     };
 
     private void RegisterCommands()
     {
-        commands[CommandChatter] = new CommandInfo(OnChatter)
+        _commands[CommandChatter] = new CommandInfo(OnChatter)
         {
             HelpMessage = "Opens the Chatter interface.",
             ShowInHelp = true
         };
 
-        commands[CommandConfig] = new CommandInfo(OnChatterConfig)
+        _commands[CommandConfig] = new CommandInfo(OnChatterConfig)
         {
             HelpMessage = "Opens the Chatter configuration window.",
             ShowInHelp = true
         };
-        commands[CommandCfg] = commands[CommandConfig];
+        _commands[CommandCfg] = _commands[CommandConfig];
 
-        commands[CommandDebug] = new CommandInfo(OnChatterDebug)
+        _commands[CommandDebug] = new CommandInfo(OnChatterDebug)
         {
             HelpMessage = "Executes debug commands",
             ShowInHelp = false
         };
 
-        foreach (var (command, info) in commands) Dalamud.Commands.AddHandler(command, info);
+        foreach (var (command, info) in _commands) Dalamud.Commands.AddHandler(command, info);
     }
 
     private void UnregisterCommands()
     {
-        foreach (var command in commands.Keys) Dalamud.Commands.RemoveHandler(command);
+        foreach (var command in _commands.Keys) Dalamud.Commands.RemoveHandler(command);
     }
 
     private void OnChatter(string command, string arguments)
     {
-        windowManager.ToggleMain();
+        _windowManager.ToggleMain();
     }
 
     private void OnChatterConfig(string command, string arguments)
     {
-        windowManager.ToggleConfig();
+        _windowManager.ToggleConfig();
     }
 
     private void OnChatterDebug(string command, string arguments)
@@ -92,12 +92,12 @@ public sealed partial class Chatter
 
         void ListDebugFlags()
         {
-            var length = debugFlags.Keys.Select(x => x.Length).Max();
+            var length = _debugFlags.Keys.Select(x => x.Length).Max();
             var flagString = "Flag".PadRight(length);
             var flagUnderscores = new string('-', length);
             PluginLog.Debug($"{flagString}  on/off");
             PluginLog.Debug($"{flagUnderscores}  ------");
-            foreach (var (name, func) in debugFlags) ListDebugFlag(name, func(), length);
+            foreach (var (name, func) in _debugFlags) ListDebugFlag(name, func(), length);
         }
 
         void ListDebugFlag(string name, bool value, int length)
