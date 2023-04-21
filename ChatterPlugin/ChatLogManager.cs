@@ -328,7 +328,8 @@ public sealed class ChatLogManager : IDisposable
 
         protected override bool ShouldLog(ChatMessage chatMessage)
         {
-            return base.ShouldLog(chatMessage) && Config.Users.ContainsKey(chatMessage.CleanedSender);
+            return base.ShouldLog(chatMessage) &&
+                   (Config.IncludeMe || Config.Users.ContainsKey(chatMessage.CleanedSender));
         }
     }
 

@@ -27,12 +27,14 @@ public class Configuration : IPluginConfiguration
         public readonly Dictionary<XivChatType, bool> ChatTypeFilterFlags = new();
 
         public ChatLogConfiguration(
-            string name, bool isActive = false, bool includeServer = false, bool includeAll = false,
+            string name, bool isActive = false, bool includeServer = false, bool includeMe = true,
+            bool includeAll = false,
             string? format = null)
         {
             Name = name;
             IsActive = isActive;
             IncludeServer = includeServer;
+            IncludeMe = includeMe;
             DebugIncludeAllMessages = includeAll;
             Format = format;
         }
@@ -46,6 +48,11 @@ public class Configuration : IPluginConfiguration
         ///     Whether this log is active and writing out to the file.
         /// </summary>
         public bool IsActive { get; set; }
+
+        /// <summary>
+        /// If true then I am included in the log even if I'm not in the user list. This will generally be true always.
+        /// </summary>
+        public bool IncludeMe { get; set; }
 
         /// <summary>
         ///     If this is true then server names are included in the output, otherwise they are stripped from
