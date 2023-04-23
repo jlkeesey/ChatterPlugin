@@ -56,11 +56,11 @@ public sealed partial class Chatter : IDalamudPlugin
 
     public void Dispose()
     {
-        Configuration.Save(); // Should be auto-saved but let's be sure
+        Configuration?.Save(); // Should be auto-saved but let's be sure
 
         UnregisterCommands();
-        ChatLogManager.Dispose();
-        ChatManager.Dispose();
-        _windowManager.Dispose();
+        ChatLogManager?.Dispose();
+        ChatManager?.Dispose();
+        _windowManager?.Dispose();
     }
 }

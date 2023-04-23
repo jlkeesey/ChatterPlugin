@@ -26,17 +26,18 @@ public sealed partial class Chatter
 
     private void RegisterCommands()
     {
-        _commands[CommandChatter] = new CommandInfo(OnChatter)
-        {
-            HelpMessage = "Opens the Chatter interface.",
-            ShowInHelp = true
-        };
+        // _commands[CommandChatter] = new CommandInfo(OnChatter)
+        // {
+        //     HelpMessage = "Opens the Chatter interface.",
+        //     ShowInHelp = true
+        // };
 
         _commands[CommandConfig] = new CommandInfo(OnChatterConfig)
         {
             HelpMessage = "Opens the Chatter configuration window.",
             ShowInHelp = true
         };
+        _commands[CommandChatter] = _commands[CommandConfig];
         _commands[CommandCfg] = _commands[CommandConfig];
 
         _commands[CommandDebug] = new CommandInfo(OnChatterDebug)
@@ -53,10 +54,10 @@ public sealed partial class Chatter
         foreach (var command in _commands.Keys) Dalamud.Commands.RemoveHandler(command);
     }
 
-    private void OnChatter(string command, string arguments)
-    {
-        _windowManager.ToggleMain();
-    }
+    // private void OnChatter(string command, string arguments)
+    // {
+    //     _windowManager.ToggleMain();
+    // }
 
     private void OnChatterConfig(string command, string arguments)
     {

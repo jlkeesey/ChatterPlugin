@@ -21,10 +21,20 @@ public class Configuration : IPluginConfiguration
     /// </summary>
     public sealed class ChatLogConfiguration
     {
+        public class ChatTypeFlag
+        {
+            public ChatTypeFlag(bool value = false)
+            {
+                Value = value;
+            }
+
+            public bool Value;
+        }
+
         /// <summary>
         ///     The include/exclude flags for each ChatType.
         /// </summary>
-        public readonly Dictionary<XivChatType, bool> ChatTypeFilterFlags = new();
+        public readonly Dictionary<XivChatType, ChatTypeFlag> ChatTypeFilterFlags = new();
 
         public ChatLogConfiguration(
             string name, bool isActive = false, bool includeServer = false, bool includeMe = true,
@@ -47,23 +57,23 @@ public class Configuration : IPluginConfiguration
         /// <summary>
         ///     Whether this log is active and writing out to the file.
         /// </summary>
-        public bool IsActive { get; set; }
+        public bool IsActive;
 
         /// <summary>
         /// If true then I am included in the log even if I'm not in the user list. This will generally be true always.
         /// </summary>
-        public bool IncludeMe { get; set; }
+        public bool IncludeMe;
 
         /// <summary>
         ///     If this is true then server names are included in the output, otherwise they are stripped from
         ///     the output, both in the name column as well as the message.
         /// </summary>
-        public bool IncludeServer { get; set; }
+        public bool IncludeServer;
 
         /// <summary>
         ///     When true all messages get written to this log including ones that normally would be filtered out.
         /// </summary>
-        public bool DebugIncludeAllMessages { get; set; }
+        public bool DebugIncludeAllMessages;
 
         /// <summary>
         ///     The format string to use for formatting the messages.
@@ -108,7 +118,7 @@ public class Configuration : IPluginConfiguration
         ///         </item>
         ///     </list>
         /// </remarks>
-        public string? Format { get; set; }
+        public string? Format;
 
         /// <summary>
         ///     The set of users to include.
@@ -131,32 +141,42 @@ public class Configuration : IPluginConfiguration
         {
             ChatTypeFilterFlags.Clear(); // TODO remove this once setup is working
             foreach (var type in DefaultEnabledTypes)
-                ChatTypeFilterFlags.TryAdd(type, true);
+                ChatTypeFilterFlags.TryAdd(type, new ChatTypeFlag(true));
         }
     }
 
     /// <summary>
     ///     The directory to write all logs to. This directory may not exist.
     /// </summary>
-    public string LogDirectory { get; set; } = FileHelper.InitialLogDirectory();
+    public string LogDirectory = FileHelper.InitialLogDirectory();
 
     /// <summary>
     ///     The prefix for the logs. This will be the first part of all log file names.
     /// </summary>
-    public string LogFileNamePrefix { get; set; } = "chatter";
+    public string LogFileNamePrefix = "chatter";
 
     /// <summary>
     ///     The configurations for the individual chat logs.
     /// </summary>
-    public Dictionary<string, ChatLogConfiguration> ChatLogs { get; set; } = new();
+    public Dictionary<string, ChatLogConfiguration> ChatLogs = new();
 
 #if DEBUG
-    public bool IsDebug { get; set; } = true;
+    public bool IsDebug = true;
 #else
-    public bool IsDebug { get; set; } = false;
+    public bool IsDebug = false;
 #endif
 
     public int Version { get; set; } = 1;
+
+    public void AddLog(ChatLogConfiguration logConfiguration)
+    {
+        ChatLogs[logConfiguration.Name] = logConfiguration;
+    }
+
+    public void RemoveLog(ChatLogConfiguration logConfiguration)
+    {
+        ChatLogs.Remove(logConfiguration.Name);
+    }
 
     /// <summary>
     ///     Saves the current state of the configuration.
@@ -172,6 +192,7 @@ public class Configuration : IPluginConfiguration
     /// <returns>The configuration to use.</returns>
     public static Configuration Load()
     {
+//         Configuration config = new Configuration();
         if (Dalamud.PluginInterface.GetPluginConfig() is not Configuration config) config = new Configuration();
         // else
         // {
@@ -179,7 +200,17 @@ public class Configuration : IPluginConfiguration
         // }
 
         if (!config.ChatLogs.ContainsKey(AllLogName))
-            config.ChatLogs[AllLogName] = new ChatLogConfiguration(AllLogName, true);
+        {
+            config.AddLog(new ChatLogConfiguration(AllLogName, true));
+        }
+
+        var logConfiguration = new ChatLogConfiguration("Tifaa", true);
+        logConfiguration.Users["Tifaa Sidrasylan"] = String.Empty;
+        logConfiguration.Users["Aelym Sidrasylan"] = "Stud Muffin";
+        logConfiguration.Users["Fiora Greyback"] = "The Oppressed";
+        config.AddLog(logConfiguration);
+        config.AddLog(new ChatLogConfiguration("Pups", true));
+        config.AddLog(new ChatLogConfiguration("Goobtube", false));
 
         foreach (var (_, chatLogConfiguration) in config.ChatLogs) chatLogConfiguration.InitializeTypeFlags();
 

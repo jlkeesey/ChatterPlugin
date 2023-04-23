@@ -138,6 +138,8 @@ public sealed class ChatLogManager : IDisposable
             Close();
         }
 
+        private static readonly Configuration.ChatLogConfiguration.ChatTypeFlag DefaultChatTypeFlag = new(false);
+
         /// <summary>
         ///     Determines if the give log information should be sent to the log output by examining the configuration.
         /// </summary>
@@ -148,7 +150,7 @@ public sealed class ChatLogManager : IDisposable
             if (!Config.IsActive) return false;
             if (Config.DebugIncludeAllMessages) return true;
             return !chatMessage.TypeLabel.IsNullOrEmpty() &&
-                   Config.ChatTypeFilterFlags.GetValueOrDefault(chatMessage.ChatType, false);
+                   Config.ChatTypeFilterFlags.GetValueOrDefault(chatMessage.ChatType, DefaultChatTypeFlag).Value;
         }
 
         /// <summary>

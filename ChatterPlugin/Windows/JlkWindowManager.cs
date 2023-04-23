@@ -5,44 +5,45 @@ namespace ChatterPlugin.Windows;
 
 public sealed class JlkWindowManager : IDisposable
 {
-    private readonly ConfigWindow configWindow;
-    private readonly MainWindow mainWindow;
-    private readonly Chatter chatter;
+    private readonly Chatter _chatter;
+    private readonly ConfigWindow _configWindow;
+    // private readonly MainWindow _mainWindow;
 
     public JlkWindowManager(Chatter chatter)
     {
-        this.chatter = chatter;
+        this._chatter = chatter;
 
-        configWindow = Add(new ConfigWindow());
-        mainWindow = Add(new MainWindow(chatter));
+        _configWindow = Add(new ConfigWindow());
+        // _mainWindow = Add(new MainWindow(chatter));
 
         Dalamud.PluginInterface.UiBuilder.Draw += chatter.WindowSystem.Draw;
-        // this.PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
+        Dalamud.PluginInterface.UiBuilder.OpenConfigUi += ToggleConfig;
     }
 
     public void Dispose()
     {
-        Dalamud.PluginInterface.UiBuilder.Draw -= chatter.WindowSystem.Draw;
+        Dalamud.PluginInterface.UiBuilder.OpenConfigUi -= ToggleConfig;
+        Dalamud.PluginInterface.UiBuilder.Draw -= _chatter.WindowSystem.Draw;
 
-        chatter.WindowSystem.RemoveAllWindows();
+        _chatter.WindowSystem.RemoveAllWindows();
 
-        mainWindow.Dispose();
-        configWindow.Dispose();
+        // _mainWindow.Dispose();
+        _configWindow.Dispose();
     }
 
-    public void ToggleMain()
-    {
-        mainWindow.IsOpen = !mainWindow.IsOpen;
-    }
+    // public void ToggleMain()
+    // {
+    //     _mainWindow.IsOpen = !_mainWindow.IsOpen;
+    // }
 
     public void ToggleConfig()
     {
-        configWindow.IsOpen = !configWindow.IsOpen;
+        _configWindow.IsOpen = !_configWindow.IsOpen;
     }
 
     private TType Add<TType>(TType window) where TType : Window
     {
-        chatter.WindowSystem.AddWindow(window);
+        _chatter.WindowSystem.AddWindow(window);
         return window;
     }
 }
