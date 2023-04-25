@@ -1,8 +1,12 @@
+using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using ChatterPlugin.Friends;
 using ChatterPlugin.Windows;
 using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
 using Dalamud.Plugin;
+using ImGuiNET;
 
 namespace ChatterPlugin;
 

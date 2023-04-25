@@ -21,57 +21,15 @@ public class Configuration : IPluginConfiguration
     /// </summary>
     public sealed class ChatLogConfiguration
     {
-        public class ChatTypeFlag
-        {
-            public ChatTypeFlag(bool value = false)
-            {
-                Value = value;
-            }
-
-            public bool Value;
-        }
-
         /// <summary>
         ///     The include/exclude flags for each ChatType.
         /// </summary>
         public readonly Dictionary<XivChatType, ChatTypeFlag> ChatTypeFilterFlags = new();
 
-        public ChatLogConfiguration(
-            string name, bool isActive = false, bool includeServer = false, bool includeMe = true,
-            bool includeAll = false,
-            string? format = null)
-        {
-            Name = name;
-            IsActive = isActive;
-            IncludeServer = includeServer;
-            IncludeMe = includeMe;
-            DebugIncludeAllMessages = includeAll;
-            Format = format;
-        }
-
         /// <summary>
-        ///     The name of this group. Will be part of the log file name.
-        /// </summary>
-        public string Name { get; init; }
-
-        /// <summary>
-        ///     Whether this log is active and writing out to the file.
-        /// </summary>
-        public bool IsActive;
-
-        /// <summary>
-        /// If true then I am included in the log even if I'm not in the user list. This will generally be true always.
-        /// </summary>
-        public bool IncludeMe;
-
-        /// <summary>
-        ///     If this is true then server names are included in the output, otherwise they are stripped from
-        ///     the output, both in the name column as well as the message.
-        /// </summary>
-        public bool IncludeServer;
-
-        /// <summary>
-        ///     When true all messages get written to this log including ones that normally would be filtered out.
+        ///     When true all messages get written to this log including ones that normally would be filtered out. This is
+        ///     different from the IncludeAllUsers in that it will include all messages from all users it will also include all
+        ///     messages of all chat types.
         /// </summary>
         public bool DebugIncludeAllMessages;
 
@@ -121,6 +79,48 @@ public class Configuration : IPluginConfiguration
         public string? Format;
 
         /// <summary>
+        ///     If true the all users will be included even if they are not in the user list. This will always be true for the
+        ///     all user.
+        /// </summary>
+        public bool IncludeAllUsers;
+
+        /// <summary>
+        ///     If true then I am included in the log even if I'm not in the user list. This will generally be true always.
+        /// </summary>
+        public bool IncludeMe;
+
+        /// <summary>
+        ///     If this is true then server names are included in the output, otherwise they are stripped from
+        ///     the output, both in the name column as well as the message.
+        /// </summary>
+        public bool IncludeServer;
+
+        /// <summary>
+        ///     Whether this log is active and writing out to the file.
+        /// </summary>
+        public bool IsActive;
+
+        public ChatLogConfiguration(
+            string name, bool isActive = false, bool includeServer = false, bool includeMe = true,
+            bool includeAllUsers = false,
+            bool includeAllMessages = false,
+            string? format = null)
+        {
+            Name = name;
+            IsActive = isActive;
+            IncludeServer = includeServer;
+            IncludeMe = includeMe;
+            IncludeAllUsers = includeAllUsers;
+            DebugIncludeAllMessages = includeAllMessages;
+            Format = format;
+        }
+
+        /// <summary>
+        ///     The name of this group. Will be part of the log file name.
+        /// </summary>
+        public string Name { get; init; }
+
+        /// <summary>
         ///     The set of users to include.
         /// </summary>
         /// <remarks>
@@ -142,6 +142,16 @@ public class Configuration : IPluginConfiguration
             ChatTypeFilterFlags.Clear(); // TODO remove this once setup is working
             foreach (var type in DefaultEnabledTypes)
                 ChatTypeFilterFlags.TryAdd(type, new ChatTypeFlag(true));
+        }
+
+        public class ChatTypeFlag
+        {
+            public bool Value;
+
+            public ChatTypeFlag(bool value = false)
+            {
+                Value = value;
+            }
         }
     }
 
@@ -200,17 +210,15 @@ public class Configuration : IPluginConfiguration
         // }
 
         if (!config.ChatLogs.ContainsKey(AllLogName))
-        {
-            config.AddLog(new ChatLogConfiguration(AllLogName, true));
-        }
+            config.AddLog(new ChatLogConfiguration(AllLogName, true, includeAllUsers: true));
 
         var logConfiguration = new ChatLogConfiguration("Tifaa", true);
-        logConfiguration.Users["Tifaa Sidrasylan"] = String.Empty;
+        logConfiguration.Users["Tifaa Sidrasylan"] = string.Empty;
         logConfiguration.Users["Aelym Sidrasylan"] = "Stud Muffin";
         logConfiguration.Users["Fiora Greyback"] = "The Oppressed";
         config.AddLog(logConfiguration);
         config.AddLog(new ChatLogConfiguration("Pups", true));
-        config.AddLog(new ChatLogConfiguration("Goobtube", false));
+        config.AddLog(new ChatLogConfiguration("Goobtube"));
 
         foreach (var (_, chatLogConfiguration) in config.ChatLogs) chatLogConfiguration.InitializeTypeFlags();
 

@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using Dalamud.Game.Text;
+using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
 using Dalamud.Utility;
 using ImGuiNET;
+using static System.String;
 
 // ReSharper disable InvertIf
 
@@ -81,6 +83,12 @@ public sealed class ConfigWindow : Window, IDisposable
     };
 
     private readonly Configuration _configuration;
+
+    private int _counter = 1;
+
+    private bool _removeDialogIsOpen = true;
+    private string _removeDialogUser = Empty;
+    private string _removeUserName = Empty;
 
     private string _selectedGroup = Configuration.AllLogName;
 
@@ -185,7 +193,12 @@ public sealed class ConfigWindow : Window, IDisposable
             ImGui.TableNextColumn();
             DrawCheckbox("Is active", ref chatLog.IsActive,
                 "When checked messages that match this group will be written to its log file. " +
-                "Uncheck to stop writing out this log. The all log cannot be disabled.",
+                "Uncheck to stop writing out this log. The all log cannot be disabled. Cannot be changed for the all group.",
+                chatLog.Name == Configuration.AllLogName);
+            ImGui.TableNextColumn();
+            DrawCheckbox("Include all users", ref chatLog.IncludeAllUsers,
+                "When checked all users will be included in this log even if they are not in the user list. " +
+                "When unchecked, only users in the user list will be included in the log. Cannot be changed for the all group.",
                 chatLog.Name == Configuration.AllLogName);
             ImGui.TableNextColumn();
             DrawCheckbox("Include server name", ref chatLog.IncludeServer,
@@ -206,72 +219,69 @@ public sealed class ConfigWindow : Window, IDisposable
         }
 
         ImGui.Spacing();
-        /*
-         *
-        static ImGuiTableFlags flags = ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_BordersV | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable;
-         */
-        /*
-        static ImGuiTableFlags flags = ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_BordersV | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable;
-
-        PushStyleCompact();
-        ImGui::CheckboxFlags("ImGuiTableFlags_ScrollY", &flags, ImGuiTableFlags_ScrollY);
-        PopStyleCompact();
-
-        // When using ScrollX or ScrollY we need to specify a size for our table container!
-        // Otherwise by default the table will fit all available space, like a BeginChild() call.
-        ImVec2 outer_size = ImVec2(0.0f, TEXT_BASE_HEIGHT * 8);
-        if (ImGui::BeginTable("table_scrolly", 3, flags, outer_size))
-        {
-            ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible
-            ImGui::TableSetupColumn("One", ImGuiTableColumnFlags_None);
-            ImGui::TableSetupColumn("Two", ImGuiTableColumnFlags_None);
-            ImGui::TableSetupColumn("Three", ImGuiTableColumnFlags_None);
-            ImGui::TableHeadersRow();
-
-            // Demonstrate using clipper for large vertical lists
-            ImGuiListClipper clipper;
-            clipper.Begin(1000);
-            while (clipper.Step())
-            {
-                for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; row++)
-                {
-                    ImGui::TableNextRow();
-                    for (int column = 0; column < 3; column++)
-                    {
-                        ImGui::TableSetColumnIndex(column);
-                        ImGui::Text("Hello %d,%d", column, row);
-                    }
-                }
-            }
-            ImGui::EndTable();
-                 *
-         */
 
         if (ImGui.CollapsingHeader("Included Users"))
         {
+            VerticalSpace(5.0f);
+            ImGui.TextWrapped("These are the users that will be included in this log. You can also enter what you " +
+                              "want each user to be renamed to in the log. This is generally used to shorten names to " +
+                              "make the log easier to read.");
+            VerticalSpace();
+            if (ImGui.Button("Add user"))
+            {
+                ImGui.OpenPopup("Add User");
+            }
+
+            DrawAddUserPopup(chatLog);
+
             const ImGuiTableFlags tableFlags = ImGuiTableFlags.ScrollY | ImGuiTableFlags.RowBg |
                                                ImGuiTableFlags.BordersOuter |
+                                               ImGuiTableFlags.SizingFixedFit |
                                                ImGuiTableFlags.BordersV;
             var textBaseHeight = ImGui.GetTextLineHeightWithSpacing();
             var outerSize = new Vector2(0.0f, textBaseHeight * 8);
-            if (ImGui.BeginTable("userTable", 2, tableFlags, outerSize))
+            if (ImGui.BeginTable("userTable", 3, tableFlags, outerSize))
             {
                 ImGui.TableSetupScrollFreeze(0, 1); // Make top row always visible
-                ImGui.TableSetupColumn("Player full name", ImGuiTableColumnFlags.None);
-                ImGui.TableSetupColumn("Replace with", ImGuiTableColumnFlags.None);
+                ImGui.TableSetupColumn("Player full name", ImGuiTableColumnFlags.WidthStretch);
+                ImGui.TableSetupColumn("Replace with", ImGuiTableColumnFlags.WidthStretch);
+                ImGui.TableSetupColumn("", ImGuiTableColumnFlags.WidthFixed, 22.0f);
                 ImGui.TableHeadersRow();
 
                 foreach (var (userFrom, userTo) in chatLog.Users)
                 {
+                    ImGui.PushID(userFrom);
                     ImGui.TableNextRow();
+
                     ImGui.TableSetColumnIndex(0);
-                    ImGui.Text(userFrom);
+                    ImGui.TextColored(new Vector4(0.6f, 0.7f, 1.0f, 1.0f), userFrom);
+
                     ImGui.TableSetColumnIndex(1);
-                    ImGui.Text(userTo.IsNullOrWhitespace() ? "-" : userTo);
+                    ImGui.TextColored(new Vector4(0.7f, 0.9f, 0.6f, 1.0f),
+                        userTo.IsNullOrWhitespace() ? "-" : userTo);
+
+                    ImGui.TableSetColumnIndex(2);
+                    if (DrawUserRemoveButton(userFrom))
+                    {
+                        if (!chatLog.Users.ContainsKey(userFrom)) return;
+                        _removeDialogUser = userFrom;
+                        ImGui.OpenPopup("Remove?");
+                    }
+
+                    DrawRemoveUserDialog();
+                    ImGui.PopID();
                 }
 
+
                 ImGui.EndTable();
+                VerticalSpace();
             }
+        }
+
+        if (_removeUserName != Empty)
+        {
+            chatLog.Users.Remove(_removeUserName);
+            _removeUserName = Empty;
         }
 
         if (ImGui.CollapsingHeader("Included Chat Types"))
@@ -284,6 +294,96 @@ public sealed class ConfigWindow : Window, IDisposable
 
         ImGui.EndChild();
         ImGui.PopStyleVar();
+    }
+
+    /// <summary>
+    /// Adds vertical space to the output.
+    /// </summary>
+    /// <param name="space">The amount of extra space to add.</param>
+    private void VerticalSpace(float space = 3.0f)
+    {
+        ImGui.Dummy(new Vector2(0.0f, space));
+    }
+
+    private string _addUserFullName = Empty;
+    private string _addUserReplacementName = Empty;
+    private bool _addUserAlreadyExists = false;
+
+    private void DrawAddUserPopup(Configuration.ChatLogConfiguration chatLog)
+    {
+        ImGui.SetNextWindowSizeConstraints(new Vector2(250.0f, 100.0f), new Vector2(400.0f, 200.0f));
+        if (ImGui.BeginPopup("Add User"))
+        {
+            if (_addUserAlreadyExists)
+            {
+                ImGui.TextColored(new Vector4(1.0f, 0.0f, 0.0f, 1.0f), "That player is already in the list.");
+            }
+
+            LongInputField("Player full name", ref _addUserFullName, 128, help: "help");
+            LongInputField("Player replacement name", ref _addUserReplacementName, 128, help: "help");
+
+            ImGui.Separator();
+
+            if (ImGui.Button("Add", new Vector2(120, 0)))
+            {
+                _addUserAlreadyExists = false;
+                var fullName = _addUserFullName.Trim();
+                if (!fullName.IsNullOrWhitespace())
+                {
+                    var replacement = _addUserReplacementName.Trim();
+                    if (chatLog.Users.TryAdd(fullName, replacement))
+                    {
+                        ImGui.CloseCurrentPopup();
+                    }
+                    else
+                    {
+                        _addUserAlreadyExists = true;
+                    }
+                }
+            }
+
+            ImGui.SameLine();
+            if (ImGui.Button("Cancel", new Vector2(120, 0)))
+            {
+                _addUserAlreadyExists = false;
+                ImGui.CloseCurrentPopup();
+            }
+
+
+            ImGui.EndPopup();
+        }
+    }
+
+    private static bool DrawUserRemoveButton(string userFrom)
+    {
+        ImGui.PushFont(UiBuilder.IconFont);
+        var buttonPressed = ImGui.Button($"{(char) FontAwesomeIcon.Trash}##{userFrom}Trash");
+        ImGui.PopFont();
+        return buttonPressed;
+    }
+
+    private void DrawRemoveUserDialog()
+    {
+        // Always center this window when appearing
+        // var center = ImGui.GetMainViewport().GetCenter();
+        // ImGui.SetNextWindowPos(center, ImGuiCond.Appearing, new Vector2(0.5f, 0.5f));
+        if (ImGui.BeginPopupModal("Remove?", ref _removeDialogIsOpen, ImGuiWindowFlags.AlwaysAutoResize))
+        {
+            ImGui.TextWrapped($"Do you want to remove {_removeDialogUser} from this log?");
+            ImGui.Separator();
+
+            if (ImGui.Button("Remove", new Vector2(120, 0)))
+            {
+                _removeUserName = _removeDialogUser;
+                ImGui.CloseCurrentPopup();
+            }
+
+            ImGui.SameLine();
+            if (ImGui.Button("Cancel", new Vector2(120, 0))) ImGui.CloseCurrentPopup();
+
+
+            ImGui.EndPopup();
+        }
     }
 
     private static void DrawCheckbox(string text, ref bool enabled, string? helpText = null, bool disabled = false)
@@ -382,10 +482,14 @@ public sealed class ConfigWindow : Window, IDisposable
     /// <param name="sameLine">True if this should be on the same line as the previous item.</param>
     private static void HelpMarker(string? description, bool sameLine = true)
     {
-        var text = description?.Trim() ?? string.Empty;
+        var text = description?.Trim() ?? Empty;
         if (text.IsNullOrEmpty()) return;
         if (sameLine) ImGui.SameLine();
-        ImGui.TextDisabled("(?)"); // TODO make this nicer like an icon
+        ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0.4f, 0.4f, 0.55f, 1.0f));
+        ImGui.PushFont(UiBuilder.IconFont);
+        ImGui.Text($"{(char) FontAwesomeIcon.QuestionCircle}");
+        ImGui.PopFont();
+        ImGui.PopStyleColor();
         if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) DrawTooltip(text);
     }
 
@@ -395,11 +499,13 @@ public sealed class ConfigWindow : Window, IDisposable
     /// <param name="description">The contents of the tooltip box. If null or empty the tooltip box is not created.</param>
     private static void DrawTooltip(string? description)
     {
-        var text = description?.Trim() ?? string.Empty;
+        var text = description?.Trim() ?? Empty;
         if (text.IsNullOrEmpty()) return;
         ImGui.BeginTooltip();
         ImGui.PushTextWrapPos(ImGui.GetFontSize() * 20.0f);
+        ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0.9f, 0.9f, 0.3f, 1.0f));
         ImGui.TextUnformatted(text);
+        ImGui.PopStyleColor();
         ImGui.PopTextWrapPos();
         ImGui.EndTooltip();
     }
