@@ -1,9 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 using System.Numerics;
+using ChatterPlugin.Friends;
 using Dalamud.Game.Text;
 using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
+using Dalamud.Logging;
 using Dalamud.Utility;
 using ImGuiNET;
 using static System.String;
@@ -83,13 +87,16 @@ public sealed class ConfigWindow : Window, IDisposable
     };
 
     private readonly Configuration _configuration;
-
-    private int _counter = 1;
-
+    private bool _addUserAlreadyExists;
+    private string _addUserFullName = Empty;
+    private string _addUserReplacementName = Empty;
+    private IEnumerable<Friend> _filteredFriends = new List<Friend>();
+    private string _friendFilter = Empty;
+    private IEnumerable<Friend> _friends = new List<Friend>();
     private bool _removeDialogIsOpen = true;
     private string _removeDialogUser = Empty;
     private string _removeUserName = Empty;
-
+    private string _selectedFriend = Empty;
     private string _selectedGroup = Configuration.AllLogName;
 
     /// <summary>
@@ -99,11 +106,11 @@ public sealed class ConfigWindow : Window, IDisposable
     {
         SizeConstraints = new WindowSizeConstraints
         {
-            MinimumSize = new Vector2(450, 400),
+            MinimumSize = new Vector2(450, 520),
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
         };
 
-        Size = new Vector2(800, 460);
+        Size = new Vector2(800, 520);
         SizeCondition = ImGuiCond.FirstUseEver;
 
         _configuration = Chatter.Configuration;
@@ -227,10 +234,7 @@ public sealed class ConfigWindow : Window, IDisposable
                               "want each user to be renamed to in the log. This is generally used to shorten names to " +
                               "make the log easier to read.");
             VerticalSpace();
-            if (ImGui.Button("Add user"))
-            {
-                ImGui.OpenPopup("Add User");
-            }
+            if (ImGui.Button("Add user")) ImGui.OpenPopup("Add User");
 
             DrawAddUserPopup(chatLog);
 
@@ -297,32 +301,55 @@ public sealed class ConfigWindow : Window, IDisposable
     }
 
     /// <summary>
-    /// Adds vertical space to the output.
+    ///     Adds vertical space to the output.
     /// </summary>
     /// <param name="space">The amount of extra space to add.</param>
-    private void VerticalSpace(float space = 3.0f)
+    private static void VerticalSpace(float space = 3.0f)
     {
         ImGui.Dummy(new Vector2(0.0f, space));
     }
 
-    private string _addUserFullName = Empty;
-    private string _addUserReplacementName = Empty;
-    private bool _addUserAlreadyExists = false;
-
+    /// <summary>
+    ///     Draws the popup to add a new user to the user list.
+    /// </summary>
+    /// <param name="chatLog">The chat log configuration to edit.</param>
     private void DrawAddUserPopup(Configuration.ChatLogConfiguration chatLog)
     {
-        ImGui.SetNextWindowSizeConstraints(new Vector2(250.0f, 100.0f), new Vector2(400.0f, 200.0f));
-        if (ImGui.BeginPopup("Add User"))
+        ImGui.SetNextWindowSizeConstraints(new Vector2(350.0f, 100.0f), new Vector2(350.0f, 200.0f));
+        //ImGui.SetNextWindowSize(new Vector2(350.0f, 170.0f));
+        if (ImGui.BeginPopup("Add User", ImGuiWindowFlags.ChildWindow))
         {
             if (_addUserAlreadyExists)
             {
+                VerticalSpace();
                 ImGui.TextColored(new Vector4(1.0f, 0.0f, 0.0f, 1.0f), "That player is already in the list.");
+                VerticalSpace();
             }
 
-            LongInputField("Player full name", ref _addUserFullName, 128, help: "help");
-            LongInputField("Player replacement name", ref _addUserReplacementName, 128, help: "help");
+            LongInputField("Player full name", ref _addUserFullName, 128, "##playerFullName",
+                "The full name of the player including the player's home world separated by an at (@) sign e.g. Lord Farquod@Duloc. " +
+                $"If a world is not present it will default to your home world of {Myself.HomeWorld}. " +
+                "You can also use the Friend selector button to pick a player from your friend list.",
+                extraWidth: 30, extra: () =>
+                {
+                    if (DrawFindFriendButton())
+                    {
+                        _friendFilter = Empty;
+                        _friends = _filteredFriends = FriendManager.GetFriends();
+                        _selectedFriend = Empty;
+                        ImGui.OpenPopup("Find Friend");
+                    }
+                });
 
+            VerticalSpace();
+            LongInputField("Player replacement name", ref _addUserReplacementName, 128, "##playerReplaceName",
+                "If present, this is the name that will replace the full play name in the log, " +
+                "typically used to simplify names of players that are well-known to you.",
+                extraWidth: 30);
+
+            VerticalSpace();
             ImGui.Separator();
+            VerticalSpace();
 
             if (ImGui.Button("Add", new Vector2(120, 0)))
             {
@@ -330,15 +357,12 @@ public sealed class ConfigWindow : Window, IDisposable
                 var fullName = _addUserFullName.Trim();
                 if (!fullName.IsNullOrWhitespace())
                 {
+                    if (!fullName.Contains('@')) fullName = $"{fullName}@{Myself.HomeWorld}";
                     var replacement = _addUserReplacementName.Trim();
                     if (chatLog.Users.TryAdd(fullName, replacement))
-                    {
                         ImGui.CloseCurrentPopup();
-                    }
                     else
-                    {
                         _addUserAlreadyExists = true;
-                    }
                 }
             }
 
@@ -349,19 +373,106 @@ public sealed class ConfigWindow : Window, IDisposable
                 ImGui.CloseCurrentPopup();
             }
 
+            DrawFindFriendPopup(ref _addUserFullName);
 
             ImGui.EndPopup();
         }
     }
 
-    private static bool DrawUserRemoveButton(string userFrom)
+    /// <summary>
+    ///     Draws the popup that lists all the users friends for selection.
+    /// </summary>
+    /// <param name="targetUserFullName">Where to put the chosen friend name.</param>
+    private void DrawFindFriendPopup(ref string targetUserFullName)
+    {
+        if (ImGui.BeginPopup("Find Friend", ImGuiWindowFlags.AlwaysAutoResize))
+        {
+            // if (ImGui.InputText("##filter", ref _friendFilter, 100))
+            // {
+            //     _filteredFriends = _friends
+            //         .Where(f => f.Name.Contains(_friendFilter, StringComparison.OrdinalIgnoreCase))
+            //         .ToImmutableSortedSet();
+            // }
+            if (ImGui.InputText("##filter", ref _friendFilter, 100))
+            {
+                _filteredFriends = _friends
+                    .Where(f => f.Name.Contains(_friendFilter, StringComparison.OrdinalIgnoreCase))
+                    .ToImmutableSortedSet();
+            }
+            ImGui.SameLine();
+            if (DrawClearFilterButton())
+            {
+                _friendFilter = Empty;
+            }
+
+            var textBaseHeight = ImGui.GetTextLineHeightWithSpacing();
+            var outerSize = new Vector2(-1.0f, textBaseHeight * 8);
+            if (ImGui.BeginListBox("##friendList", outerSize))
+            {
+                foreach (var filteredFriend in _filteredFriends)
+                    if (ImGui.Selectable(filteredFriend.FullName, filteredFriend.FullName == _selectedFriend))
+                        _selectedFriend = filteredFriend.FullName;
+
+                ImGui.EndListBox();
+            }
+
+            ImGui.Separator();
+            if (ImGui.Button("Add", new Vector2(120, 0)))
+            {
+                if (!_selectedFriend.IsNullOrWhitespace())
+                    targetUserFullName = _selectedFriend;
+                ImGui.CloseCurrentPopup();
+            }
+
+            ImGui.SameLine();
+            if (ImGui.Button("Cancel", new Vector2(120, 0))) ImGui.CloseCurrentPopup();
+
+            ImGui.EndPopup();
+        }
+    }
+
+    /// <summary>
+    ///     Draws the button that brings up the friend selection dialog.
+    /// </summary>
+    /// <returns>True if the button was pressed.</returns>
+    private static bool DrawClearFilterButton()
     {
         ImGui.PushFont(UiBuilder.IconFont);
-        var buttonPressed = ImGui.Button($"{(char) FontAwesomeIcon.Trash}##{userFrom}Trash");
+        var buttonPressed = ImGui.Button($"{(char) FontAwesomeIcon.SquareXmark}##findFriend");
+        ImGui.PopFont();
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) DrawTooltip("Clears the filter.");
+        return buttonPressed;
+    }
+
+    /// <summary>
+    ///     Draws the button that brings up the friend selection dialog.
+    /// </summary>
+    /// <returns>True if the button was pressed.</returns>
+    private static bool DrawFindFriendButton()
+    {
+        ImGui.PushFont(UiBuilder.IconFont);
+        var buttonPressed = ImGui.Button($"{(char) FontAwesomeIcon.PersonCirclePlus}##findFriend");
+        ImGui.PopFont();
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) DrawTooltip("Brings up the Friend selector.");
+        return buttonPressed;
+    }
+
+    /// <summary>
+    ///     Draws the button that brings up the remove user dialog.
+    /// </summary>
+    /// <param name="user">Which user is being removed.</param>
+    /// <returns>True if the button was pressed.</returns>
+    private static bool DrawUserRemoveButton(string user)
+    {
+        ImGui.PushFont(UiBuilder.IconFont);
+        var buttonPressed = ImGui.Button($"{(char) FontAwesomeIcon.Trash}##{user}Trash");
         ImGui.PopFont();
         return buttonPressed;
     }
 
+    /// <summary>
+    ///     Draws the remove user dialog.
+    /// </summary>
     private void DrawRemoveUserDialog()
     {
         // Always center this window when appearing
@@ -386,10 +497,17 @@ public sealed class ConfigWindow : Window, IDisposable
         }
     }
 
-    private static void DrawCheckbox(string text, ref bool enabled, string? helpText = null, bool disabled = false)
+    /// <summary>
+    ///     Draws a check box control with the optional help text.
+    /// </summary>
+    /// <param name="label">The label for the checkbox.</param>
+    /// <param name="itemChecked">True if this check box is checked.</param>
+    /// <param name="helpText">The optional help text.</param>
+    /// <param name="disabled">True if this control should be disabled.</param>
+    private static void DrawCheckbox(string label, ref bool itemChecked, string? helpText = null, bool disabled = false)
     {
         if (disabled) ImGui.BeginDisabled();
-        ImGui.Checkbox(text, ref enabled);
+        ImGui.Checkbox(label, ref itemChecked);
         if (disabled) ImGui.EndDisabled();
         HelpMarker(helpText);
     }
@@ -464,14 +582,23 @@ public sealed class ConfigWindow : Window, IDisposable
     /// <param name="maxLength">The maximum length.</param>
     /// <param name="id">The optional id for the field. This is only necessary if the label is not unique.</param>
     /// <param name="help">The optional help text displayed when hovering over the help button.</param>
-    private static void LongInputField(string label, ref string value, uint maxLength = 100, string? id = null,
-        string? help = null)
+    /// <param name="extra">Function to add extra parts to the end of the widget.</param>
+    /// <param name="extraWidth">The width of the extra element(s).</param>
+    private static bool LongInputField(string label, ref string value, uint maxLength = 100, string? id = null,
+        string? help = null, Action? extra = null, int extraWidth = 0)
     {
         ImGui.Text(label);
         HelpMarker(help);
 
-        ImGui.SetNextItemWidth(-1);
-        ImGui.InputText(id ?? label, ref value, maxLength);
+        ImGui.SetNextItemWidth(extraWidth == 0 ? -1 : -extraWidth);
+        var result = ImGui.InputText(id ?? label, ref value, maxLength);
+        if (extra != null)
+        {
+            ImGui.SameLine();
+            extra();
+        }
+
+        return result;
     }
 
 

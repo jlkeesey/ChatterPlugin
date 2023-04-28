@@ -42,7 +42,6 @@ public static class FriendManager
             var entry = (FriendEntry*) (list + i * FriendEntry.Size);
             var homeWorld = WorldManager.GetWorld(entry->HomeWorld);
             var currentWorld = WorldManager.GetWorld(entry->CurrentWorld);
-            PluginLog.Log($"@@@@ {entry->Name}: w:'{homeWorld.Name}' cur:'{currentWorld.Name}' ");
             friends.Add(new Friend(entry->ContentId, entry->Name, entry->FreeCompany, homeWorld, currentWorld,
                 entry->IsOnline));
         }

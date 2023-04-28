@@ -82,7 +82,6 @@ internal class FileHelper
             return directory;
         if (File.Exists(directory))
         {
-            PluginLog.LogError("Directory is a file: {0}", directory);
             // TODO Add handling for this case. Preferably not allow getting here.
             return string.Empty;
         }
@@ -90,7 +89,6 @@ internal class FileHelper
         var parent = Path.GetDirectoryName(directory);
         if (Directory.Exists(parent))
             return CreateDirectory(directory);
-        PluginLog.LogError("Directory parent not exist: {0}", directory);
         // TODO Add handling for this case. Preferably not allow getting here.
         return string.Empty;
     }
