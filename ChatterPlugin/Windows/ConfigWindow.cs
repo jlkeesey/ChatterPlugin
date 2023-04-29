@@ -4,10 +4,10 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Numerics;
 using ChatterPlugin.Friends;
+using ChatterPlugin.Localization;
 using Dalamud.Game.Text;
 using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
-using Dalamud.Logging;
 using Dalamud.Utility;
 using ImGuiNET;
 using static System.String;
@@ -28,14 +28,14 @@ public sealed class ConfigWindow : Window, IDisposable
     /// </summary>
     private static readonly ChatTypeFlagList GeneralChatTypeFlags = new()
     {
-        {XivChatType.Say, "Say", "When checked /say (/s) messages are included."},
-        {XivChatType.Yell, "Yell", "When checked /yell (/y) messages are included."},
-        {XivChatType.Shout, "Shout", "When checked /shout (/sh) messages are included."},
-        {XivChatType.TellIncoming, "Tell", "When checked /tell (/t) messages are included."},
-        {XivChatType.Party, "Party", "When checked /party (/p) messages are included."},
-        {XivChatType.FreeCompany, "FC", "When checked /freecompany (/fc) messages are included."},
-        {XivChatType.Alliance, "Alliance", "When checked /alliance (/a) messages are included."},
-        {XivChatType.StandardEmote, "Emote", "When checked /emote (/em) messages are included."}
+        {XivChatType.Say, Loc.Message("ChatType.Say"), Loc.Message("ChatType.Say.Help")},
+        {XivChatType.Yell, Loc.Message("ChatType.Yell"), Loc.Message("ChatType.Yell.Help")},
+        {XivChatType.Shout, Loc.Message("ChatType.Shout"), Loc.Message("ChatType.Shout.Help")},
+        {XivChatType.TellIncoming, Loc.Message("ChatType.Tell"), Loc.Message("ChatType.Tell.Help")},
+        {XivChatType.Party, Loc.Message("ChatType.Party"), Loc.Message("ChatType.Party.Help")},
+        {XivChatType.FreeCompany, Loc.Message("ChatType.FreeCompany"), Loc.Message("ChatType.FreeCompany.Help")},
+        {XivChatType.Alliance, Loc.Message("ChatType.Alliance"), Loc.Message("ChatType.Alliance.Help")},
+        {XivChatType.StandardEmote, Loc.Message("ChatType.Emote"), Loc.Message("ChatType.Emote.Help")}
     };
 
     /// <summary>
@@ -43,14 +43,14 @@ public sealed class ConfigWindow : Window, IDisposable
     /// </summary>
     private static readonly ChatTypeFlagList LinkShellChatTypeFlags = new()
     {
-        {XivChatType.Ls1, "Ls1", "When checked /linkshell1 (/ls1) messages are included."},
-        {XivChatType.Ls2, "Ls2", "When checked /linkshell2 (/ls2) messages are included."},
-        {XivChatType.Ls3, "Ls3", "When checked /linkshell3 (/ls3) messages are included."},
-        {XivChatType.Ls4, "Ls4", "When checked /linkshell4 (/ls4) messages are included."},
-        {XivChatType.Ls5, "Ls5", "When checked /linkshell5 (/ls5) messages are included."},
-        {XivChatType.Ls6, "Ls6", "When checked /linkshell6 (/ls6) messages are included."},
-        {XivChatType.Ls7, "Ls7", "When checked /linkshell7 (/ls7) messages are included."},
-        {XivChatType.Ls8, "Ls8", "When checked /linkshell8 (/ls8) messages are included."}
+        {XivChatType.Ls1, Loc.Message("ChatType.Ls1"), Loc.Message("ChatType.Ls1.Help")},
+        {XivChatType.Ls2, Loc.Message("ChatType.Ls2"), Loc.Message("ChatType.Ls2.Help")},
+        {XivChatType.Ls3, Loc.Message("ChatType.Ls3"), Loc.Message("ChatType.Ls3.Help")},
+        {XivChatType.Ls4, Loc.Message("ChatType.Ls4"), Loc.Message("ChatType.Ls4.Help")},
+        {XivChatType.Ls5, Loc.Message("ChatType.Ls5"), Loc.Message("ChatType.Ls5.Help")},
+        {XivChatType.Ls6, Loc.Message("ChatType.Ls6"), Loc.Message("ChatType.Ls6.Help")},
+        {XivChatType.Ls7, Loc.Message("ChatType.Ls7"), Loc.Message("ChatType.Ls7.Help")},
+        {XivChatType.Ls8, Loc.Message("ChatType.Ls8"), Loc.Message("ChatType.Ls8.Help")}
     };
 
     /// <summary>
@@ -58,16 +58,14 @@ public sealed class ConfigWindow : Window, IDisposable
     /// </summary>
     private static readonly ChatTypeFlagList CrossWorldLinkShellChatTypeFlags = new()
     {
-        // ReSharper disable StringLiteralTypo
-        {XivChatType.CrossLinkShell1, "Cwls1", "When checked /cwlinkshell1 (/cwl1) messages are included."},
-        {XivChatType.CrossLinkShell2, "Cwls2", "When checked /cwlinkshell2 (/cwl2) messages are included."},
-        {XivChatType.CrossLinkShell3, "Cwls3", "When checked /cwlinkshell3 (/cwl3) messages are included."},
-        {XivChatType.CrossLinkShell4, "Cwls4", "When checked /cwlinkshell4 (/cwl4) messages are included."},
-        {XivChatType.CrossLinkShell5, "Cwls5", "When checked /cwlinkshell5 (/cwl5) messages are included."},
-        {XivChatType.CrossLinkShell6, "Cwls6", "When checked /cwlinkshell6 (/cwl6) messages are included."},
-        {XivChatType.CrossLinkShell7, "Cwls7", "When checked /cwlinkshell7 (/cwl7) messages are included."},
-        {XivChatType.CrossLinkShell8, "Cwls8", "When checked /cwlinkshell8 (/cwl8) messages are included."}
-        // ReSharper restore StringLiteralTypo
+        {XivChatType.CrossLinkShell1, Loc.Message("ChatType.Cwls1"), Loc.Message("ChatType.Cwls1.Help")},
+        {XivChatType.CrossLinkShell2, Loc.Message("ChatType.Cwls2"), Loc.Message("ChatType.Cwls2.Help")},
+        {XivChatType.CrossLinkShell3, Loc.Message("ChatType.Cwls3"), Loc.Message("ChatType.Cwls3.Help")},
+        {XivChatType.CrossLinkShell4, Loc.Message("ChatType.Cwls4"), Loc.Message("ChatType.Cwls4.Help")},
+        {XivChatType.CrossLinkShell5, Loc.Message("ChatType.Cwls5"), Loc.Message("ChatType.Cwls5.Help")},
+        {XivChatType.CrossLinkShell6, Loc.Message("ChatType.Cwls6"), Loc.Message("ChatType.Cwls6.Help")},
+        {XivChatType.CrossLinkShell7, Loc.Message("ChatType.Cwls7"), Loc.Message("ChatType.Cwls7.Help")},
+        {XivChatType.CrossLinkShell8, Loc.Message("ChatType.Cwls8"), Loc.Message("ChatType.Cwls8.Help")}
     };
 
     /// <summary>
@@ -75,15 +73,13 @@ public sealed class ConfigWindow : Window, IDisposable
     /// </summary>
     private static readonly ChatTypeFlagList OtherChatTypeFlags = new()
     {
-        // ReSharper disable StringLiteralTypo
-        {XivChatType.Urgent, "Urgent", "When checked include urgent messages sent by Square Enix."},
-        {XivChatType.Notice, "Notice", "When checked include notices sent by Square Enix."},
-        {XivChatType.NoviceNetwork, "Novice", "When checked include novice network messages."},
-        {XivChatType.PvPTeam, "Pvp", "When checked include PVP team messages."},
-        {XivChatType.Echo, "Echo", "When checked include /echo messages."},
-        {XivChatType.SystemError, "Sys Error", "When checked include system error messages sent by Square Enix."},
-        {XivChatType.SystemMessage, "Sys Message", "When checked include system messages sent by Square Enix."}
-        // ReSharper restore StringLiteralTypo
+        {XivChatType.Urgent, Loc.Message("ChatType.Urgent"), Loc.Message("ChatType.Urgent.Help")},
+        {XivChatType.Notice, Loc.Message("ChatType.Notice"), Loc.Message("ChatType.Notice.Help")},
+        {XivChatType.NoviceNetwork, Loc.Message("ChatType.NoviceNetwork"), Loc.Message("ChatType.NoviceNetwork.Help")},
+        {XivChatType.PvPTeam, Loc.Message("ChatType.PvPTeam"), Loc.Message("ChatType.PvPTeam.Help")},
+        {XivChatType.Echo, Loc.Message("ChatType.Echo"), Loc.Message("ChatType.Echo.Help")},
+        {XivChatType.SystemError, Loc.Message("ChatType.SystemError"), Loc.Message("ChatType.SystemError.Help")},
+        {XivChatType.SystemMessage, Loc.Message("ChatType.SystemMessage"), Loc.Message("ChatType.SystemMessage.Help")}
     };
 
     private readonly Configuration _configuration;
@@ -127,13 +123,13 @@ public sealed class ConfigWindow : Window, IDisposable
     {
         if (ImGui.BeginTabBar("tabBar", ImGuiTabBarFlags.None))
         {
-            if (ImGui.BeginTabItem("General"))
+            if (ImGui.BeginTabItem(Loc.Message("Tab.General")))
             {
                 DrawGeneralTab();
                 ImGui.EndTabItem();
             }
 
-            if (ImGui.BeginTabItem("Groups"))
+            if (ImGui.BeginTabItem(Loc.Message("Tab.Groups")))
             {
                 DrawGroupsTab();
                 ImGui.EndTabItem();
@@ -148,26 +144,14 @@ public sealed class ConfigWindow : Window, IDisposable
     /// </summary>
     private void DrawGeneralTab()
     {
-        ImGui.InputText("File name prefix", ref _configuration.LogFileNamePrefix, 50);
-        HelpMarker("The prefix for all log files created by Chatter.");
+        LongInputField(Loc.Message("Label.FileNamePrefix"), ref _configuration.LogFileNamePrefix, 50,
+            "##fileNamePrefix",
+            Loc.Message("Label.FileNamePrefix.Help"));
 
-        ImGui.Spacing();
-        ImGui.Spacing();
-        ImGui.Spacing();
+        VerticalSpace();
 
-        LongInputField("Save directory", ref _configuration.LogDirectory, 1024, "##saveDirectory",
-            "The directory where all logs are written. If the final part of the directory does not exist it will be created.");
-
-        ImGui.Spacing();
-        ImGui.Spacing();
-        ImGui.Spacing();
-
-        ImGui.Separator();
-        ImGui.Text($"Size: [{ImGui.GetWindowSize().X}, {ImGui.GetWindowSize().Y}]");
-        ImGui.Separator();
-
-        ImGui.Spacing();
-        if (ImGui.Button("Save")) _configuration.Save();
+        LongInputField(Loc.Message("Label.SaveDirectory"), ref _configuration.LogDirectory, 1024, "##saveDirectory",
+            Loc.Message("Label.SaveDirectory.Help"));
     }
 
     /// <summary>
@@ -198,43 +182,33 @@ public sealed class ConfigWindow : Window, IDisposable
         if (ImGui.BeginTable("general", 2))
         {
             ImGui.TableNextColumn();
-            DrawCheckbox("Is active", ref chatLog.IsActive,
-                "When checked messages that match this group will be written to its log file. " +
-                "Uncheck to stop writing out this log. The all log cannot be disabled. Cannot be changed for the all group.",
-                chatLog.Name == Configuration.AllLogName);
+            DrawCheckbox(Loc.Message("Label.IsActive.Checkbox"), ref chatLog.IsActive,
+                Loc.Message("Label.IsActive.Checkbox.Help"), chatLog.Name == Configuration.AllLogName);
             ImGui.TableNextColumn();
-            DrawCheckbox("Include all users", ref chatLog.IncludeAllUsers,
-                "When checked all users will be included in this log even if they are not in the user list. " +
-                "When unchecked, only users in the user list will be included in the log. Cannot be changed for the all group.",
-                chatLog.Name == Configuration.AllLogName);
+            DrawCheckbox(Loc.Message("Label.IncludeAllUsers.Checkbox"), ref chatLog.IncludeAllUsers,
+                Loc.Message("Label.IncludeAllUsers.Checkbox.Help"), chatLog.Name == Configuration.AllLogName);
             ImGui.TableNextColumn();
-            DrawCheckbox("Include server name", ref chatLog.IncludeServer,
-                "When checked the server names will be appended to each player's name. " +
-                "When unchecked server names will be removed from all names. " +
-                "Note: Adding server names to player names in messages may not work reliably for players on the same server as you.");
+            DrawCheckbox(Loc.Message("Label.IncludeServerName.Checkbox"), ref chatLog.IncludeServer,
+                Loc.Message("Label.IncludeServerName.Checkbox.Help"));
             ImGui.TableNextColumn();
-            DrawCheckbox("Include me", ref chatLog.IncludeMe,
-                "When checked you will be included in this log even if you are not in the user list. " +
-                "When unchecked, you will only be included in the log if you are included in the user list.");
+            DrawCheckbox(Loc.Message("Label.IncludeSelf.Checkbox"), ref chatLog.IncludeMe,
+                Loc.Message("Label.IncludeSelf.Checkbox.Help"));
 #if DEBUG
             ImGui.TableNextColumn();
-            DrawCheckbox("Include all messages (debug)", ref chatLog.DebugIncludeAllMessages,
-                "When checked all messages are included in this log, even ones that are normally ignored. " +
-                "This is only for debugging.");
+            DrawCheckbox(Loc.Message("Label.IncludeAll.Checkbox"), ref chatLog.DebugIncludeAllMessages,
+                Loc.Message("Label.IncludeAll.Checkbox.Help"));
 #endif
             ImGui.EndTable();
         }
 
         ImGui.Spacing();
 
-        if (ImGui.CollapsingHeader("Included Users"))
+        if (ImGui.CollapsingHeader(Loc.Message("Header.IncludedUsers")))
         {
             VerticalSpace(5.0f);
-            ImGui.TextWrapped("These are the users that will be included in this log. You can also enter what you " +
-                              "want each user to be renamed to in the log. This is generally used to shorten names to " +
-                              "make the log easier to read.");
+            ImGui.TextWrapped(Loc.Message("Description.IncludedUsers"));
             VerticalSpace();
-            if (ImGui.Button("Add user")) ImGui.OpenPopup("Add User");
+            if (ImGui.Button(Loc.Message("Button.AddUser"))) ImGui.OpenPopup("addUser");
 
             DrawAddUserPopup(chatLog);
 
@@ -247,9 +221,9 @@ public sealed class ConfigWindow : Window, IDisposable
             if (ImGui.BeginTable("userTable", 3, tableFlags, outerSize))
             {
                 ImGui.TableSetupScrollFreeze(0, 1); // Make top row always visible
-                ImGui.TableSetupColumn("Player full name", ImGuiTableColumnFlags.WidthStretch);
-                ImGui.TableSetupColumn("Replace with", ImGuiTableColumnFlags.WidthStretch);
-                ImGui.TableSetupColumn("", ImGuiTableColumnFlags.WidthFixed, 22.0f);
+                ImGui.TableSetupColumn(Loc.Message("ColumnHeader.FullName"), ImGuiTableColumnFlags.WidthStretch);
+                ImGui.TableSetupColumn(Loc.Message("ColumnHeader.Replacement"), ImGuiTableColumnFlags.WidthStretch);
+                ImGui.TableSetupColumn(Empty, ImGuiTableColumnFlags.WidthFixed, 22.0f);
                 ImGui.TableHeadersRow();
 
                 foreach (var (userFrom, userTo) in chatLog.Users)
@@ -269,7 +243,7 @@ public sealed class ConfigWindow : Window, IDisposable
                     {
                         if (!chatLog.Users.ContainsKey(userFrom)) return;
                         _removeDialogUser = userFrom;
-                        ImGui.OpenPopup("Remove?");
+                        ImGui.OpenPopup("removeUser");
                     }
 
                     DrawRemoveUserDialog();
@@ -288,7 +262,7 @@ public sealed class ConfigWindow : Window, IDisposable
             _removeUserName = Empty;
         }
 
-        if (ImGui.CollapsingHeader("Included Chat Types"))
+        if (ImGui.CollapsingHeader(Loc.Message("Header.IncludedChatTypes")))
         {
             DrawChatTypeFlags("flagGeneral", chatLog, GeneralChatTypeFlags);
             DrawChatTypeFlags("flagLs", chatLog, LinkShellChatTypeFlags);
@@ -316,20 +290,17 @@ public sealed class ConfigWindow : Window, IDisposable
     private void DrawAddUserPopup(Configuration.ChatLogConfiguration chatLog)
     {
         ImGui.SetNextWindowSizeConstraints(new Vector2(350.0f, 100.0f), new Vector2(350.0f, 200.0f));
-        //ImGui.SetNextWindowSize(new Vector2(350.0f, 170.0f));
-        if (ImGui.BeginPopup("Add User", ImGuiWindowFlags.ChildWindow))
+        if (ImGui.BeginPopup("addUser", ImGuiWindowFlags.ChildWindow))
         {
             if (_addUserAlreadyExists)
             {
                 VerticalSpace();
-                ImGui.TextColored(new Vector4(1.0f, 0.0f, 0.0f, 1.0f), "That player is already in the list.");
+                ImGui.TextColored(new Vector4(1.0f, 0.0f, 0.0f, 1.0f), Loc.Message("Message.PlayerAlreadyInList"));
                 VerticalSpace();
             }
 
-            LongInputField("Player full name", ref _addUserFullName, 128, "##playerFullName",
-                "The full name of the player including the player's home world separated by an at (@) sign e.g. Lord Farquod@Duloc. " +
-                $"If a world is not present it will default to your home world of {Myself.HomeWorld}. " +
-                "You can also use the Friend selector button to pick a player from your friend list.",
+            LongInputField(Loc.Message("Label.PlayerFullName"), ref _addUserFullName, 128, "##playerFullName",
+                Loc.Message("Label.PlayerFullName.Help", Myself.HomeWorld),
                 extraWidth: 30, extra: () =>
                 {
                     if (DrawFindFriendButton())
@@ -337,21 +308,21 @@ public sealed class ConfigWindow : Window, IDisposable
                         _friendFilter = Empty;
                         _friends = _filteredFriends = FriendManager.GetFriends();
                         _selectedFriend = Empty;
-                        ImGui.OpenPopup("Find Friend");
+                        ImGui.OpenPopup("findFriend");
                     }
                 });
 
             VerticalSpace();
-            LongInputField("Player replacement name", ref _addUserReplacementName, 128, "##playerReplaceName",
-                "If present, this is the name that will replace the full play name in the log, " +
-                "typically used to simplify names of players that are well-known to you.",
+            LongInputField(Loc.Message("Label.PlayerReplacement"), ref _addUserReplacementName, 128,
+                "##playerReplaceName",
+                Loc.Message("Label.PlayerReplacement.Help"),
                 extraWidth: 30);
 
             VerticalSpace();
             ImGui.Separator();
             VerticalSpace();
 
-            if (ImGui.Button("Add", new Vector2(120, 0)))
+            if (ImGui.Button(Loc.Message("Button.Add"), new Vector2(120, 0)))
             {
                 _addUserAlreadyExists = false;
                 var fullName = _addUserFullName.Trim();
@@ -367,7 +338,7 @@ public sealed class ConfigWindow : Window, IDisposable
             }
 
             ImGui.SameLine();
-            if (ImGui.Button("Cancel", new Vector2(120, 0)))
+            if (ImGui.Button(Loc.Message("Button.Cancel"), new Vector2(120, 0)))
             {
                 _addUserAlreadyExists = false;
                 ImGui.CloseCurrentPopup();
@@ -385,7 +356,7 @@ public sealed class ConfigWindow : Window, IDisposable
     /// <param name="targetUserFullName">Where to put the chosen friend name.</param>
     private void DrawFindFriendPopup(ref string targetUserFullName)
     {
-        if (ImGui.BeginPopup("Find Friend", ImGuiWindowFlags.AlwaysAutoResize))
+        if (ImGui.BeginPopup("findFriend", ImGuiWindowFlags.AlwaysAutoResize))
         {
             // if (ImGui.InputText("##filter", ref _friendFilter, 100))
             // {
@@ -394,16 +365,11 @@ public sealed class ConfigWindow : Window, IDisposable
             //         .ToImmutableSortedSet();
             // }
             if (ImGui.InputText("##filter", ref _friendFilter, 100))
-            {
                 _filteredFriends = _friends
                     .Where(f => f.Name.Contains(_friendFilter, StringComparison.OrdinalIgnoreCase))
                     .ToImmutableSortedSet();
-            }
             ImGui.SameLine();
-            if (DrawClearFilterButton())
-            {
-                _friendFilter = Empty;
-            }
+            if (DrawClearFilterButton()) _friendFilter = Empty;
 
             var textBaseHeight = ImGui.GetTextLineHeightWithSpacing();
             var outerSize = new Vector2(-1.0f, textBaseHeight * 8);
@@ -417,7 +383,7 @@ public sealed class ConfigWindow : Window, IDisposable
             }
 
             ImGui.Separator();
-            if (ImGui.Button("Add", new Vector2(120, 0)))
+            if (ImGui.Button(Loc.Message("Button.Add"), new Vector2(120, 0)))
             {
                 if (!_selectedFriend.IsNullOrWhitespace())
                     targetUserFullName = _selectedFriend;
@@ -425,7 +391,7 @@ public sealed class ConfigWindow : Window, IDisposable
             }
 
             ImGui.SameLine();
-            if (ImGui.Button("Cancel", new Vector2(120, 0))) ImGui.CloseCurrentPopup();
+            if (ImGui.Button(Loc.Message("Button.Cancel"), new Vector2(120, 0))) ImGui.CloseCurrentPopup();
 
             ImGui.EndPopup();
         }
@@ -440,7 +406,8 @@ public sealed class ConfigWindow : Window, IDisposable
         ImGui.PushFont(UiBuilder.IconFont);
         var buttonPressed = ImGui.Button($"{(char) FontAwesomeIcon.SquareXmark}##findFriend");
         ImGui.PopFont();
-        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) DrawTooltip("Clears the filter.");
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            DrawTooltip(Loc.Message("Button.ClearFilter.Help"));
         return buttonPressed;
     }
 
@@ -453,7 +420,8 @@ public sealed class ConfigWindow : Window, IDisposable
         ImGui.PushFont(UiBuilder.IconFont);
         var buttonPressed = ImGui.Button($"{(char) FontAwesomeIcon.PersonCirclePlus}##findFriend");
         ImGui.PopFont();
-        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) DrawTooltip("Brings up the Friend selector.");
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            DrawTooltip(Loc.Message("Button.FriendSelector.Help"));
         return buttonPressed;
     }
 
@@ -475,22 +443,19 @@ public sealed class ConfigWindow : Window, IDisposable
     /// </summary>
     private void DrawRemoveUserDialog()
     {
-        // Always center this window when appearing
-        // var center = ImGui.GetMainViewport().GetCenter();
-        // ImGui.SetNextWindowPos(center, ImGuiCond.Appearing, new Vector2(0.5f, 0.5f));
-        if (ImGui.BeginPopupModal("Remove?", ref _removeDialogIsOpen, ImGuiWindowFlags.AlwaysAutoResize))
+        if (ImGui.BeginPopupModal("removeUser", ref _removeDialogIsOpen, ImGuiWindowFlags.AlwaysAutoResize))
         {
-            ImGui.TextWrapped($"Do you want to remove {_removeDialogUser} from this log?");
+            ImGui.TextWrapped(Loc.Message("Button.FriendSelector.Help", _removeDialogUser));
             ImGui.Separator();
 
-            if (ImGui.Button("Remove", new Vector2(120, 0)))
+            if (ImGui.Button(Loc.Message("Button.Remove"), new Vector2(120, 0)))
             {
                 _removeUserName = _removeDialogUser;
                 ImGui.CloseCurrentPopup();
             }
 
             ImGui.SameLine();
-            if (ImGui.Button("Cancel", new Vector2(120, 0))) ImGui.CloseCurrentPopup();
+            if (ImGui.Button(Loc.Message("Button.Cancel"), new Vector2(120, 0))) ImGui.CloseCurrentPopup();
 
 
             ImGui.EndPopup();
@@ -584,23 +549,20 @@ public sealed class ConfigWindow : Window, IDisposable
     /// <param name="help">The optional help text displayed when hovering over the help button.</param>
     /// <param name="extra">Function to add extra parts to the end of the widget.</param>
     /// <param name="extraWidth">The width of the extra element(s).</param>
-    private static bool LongInputField(string label, ref string value, uint maxLength = 100, string? id = null,
+    private static void LongInputField(string label, ref string value, uint maxLength = 100, string? id = null,
         string? help = null, Action? extra = null, int extraWidth = 0)
     {
         ImGui.Text(label);
         HelpMarker(help);
 
         ImGui.SetNextItemWidth(extraWidth == 0 ? -1 : -extraWidth);
-        var result = ImGui.InputText(id ?? label, ref value, maxLength);
+        ImGui.InputText(id ?? label, ref value, maxLength);
         if (extra != null)
         {
             ImGui.SameLine();
             extra();
         }
-
-        return result;
     }
-
 
     /// <summary>
     ///     Adds a help button that shows the given help text when hovered over.

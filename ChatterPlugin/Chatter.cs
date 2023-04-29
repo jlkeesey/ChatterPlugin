@@ -2,6 +2,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using ChatterPlugin.Friends;
+using ChatterPlugin.Localization;
 using ChatterPlugin.Windows;
 using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
@@ -22,6 +23,8 @@ public sealed partial class Chatter : IDalamudPlugin
         {
             Dalamud.Initialize(pluginInterface);
             Version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "";
+            Loc.Load();
+            //Loc.Debug();
 
             Configuration = Configuration.Load();
 
@@ -31,7 +34,7 @@ public sealed partial class Chatter : IDalamudPlugin
             ChatManager = new ChatManager(ChatLogManager);
 
             // you might normally want to embed resources and load them from the manifest stream
-            // var imagePath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");
+            // var imagePath = Path.Combine(Dalamud.PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");
             // var goatImage = this.PluginInterface.UiBuilder.LoadImage(imagePath);
 
             _windowManager = new JlkWindowManager(this);

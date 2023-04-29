@@ -21,9 +21,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Localization\messages.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="..\Data\goat.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Visible>false</Visible>
+    </Content>
+    <Content Include="Localization\messages.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 
@@ -67,5 +74,7 @@
       <Private>false</Private>
     </Reference>
   </ItemGroup>
+
+  <ProjectExtensions><VisualStudio><UserProperties localization_4messages_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>
 
 </Project>
