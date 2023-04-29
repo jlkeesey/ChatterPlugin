@@ -358,12 +358,6 @@ public sealed class ConfigWindow : Window, IDisposable
     {
         if (ImGui.BeginPopup("findFriend", ImGuiWindowFlags.AlwaysAutoResize))
         {
-            // if (ImGui.InputText("##filter", ref _friendFilter, 100))
-            // {
-            //     _filteredFriends = _friends
-            //         .Where(f => f.Name.Contains(_friendFilter, StringComparison.OrdinalIgnoreCase))
-            //         .ToImmutableSortedSet();
-            // }
             if (ImGui.InputText("##filter", ref _friendFilter, 100))
                 _filteredFriends = _friends
                     .Where(f => f.Name.Contains(_friendFilter, StringComparison.OrdinalIgnoreCase))
