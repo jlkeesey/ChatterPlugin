@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using ChatterPlugin.Model;
 using Dalamud.Game.Text;
 using Dalamud.Logging;
 using Dalamud.Utility;
@@ -13,9 +14,8 @@ namespace ChatterPlugin;
 /// <remarks>
 ///     <para>
 ///         A set of logs is created based on the current configuration. If that configuration changes, then we
-///         create a new set of logs that reflect the new settings.
-///         There is one main or all log that contains all messages and one log for each group set up in the
-///         configuration.
+///         create a new set of logs that reflect the new settings. There is one main or all log that contains all messages
+///         and one log for each group set up in the configuration.
 ///     </para>
 /// </remarks>
 public sealed class ChatLogManager : IDisposable
@@ -32,10 +32,10 @@ public sealed class ChatLogManager : IDisposable
     }
 
     /// <summary>
-    ///     Returns the ChatLog for the given configuration. If one does not exist then a new one is created.
+    ///     Returns the <see cref="ChatLog"/> for the given configuration. If one does not exist then a new one is created.
     /// </summary>
     /// <param name="cfg">The configuration to use for this log.</param>
-    /// <returns></returns>
+    /// <returns>The <see cref="ChatLog"/></returns>
     public ChatLog GetLog(Configuration.ChatLogConfiguration cfg)
     {
         UpdateConfigValues();
@@ -44,9 +44,7 @@ public sealed class ChatLogManager : IDisposable
                 ? new AllChatLog(this, cfg)
                 : new GroupChatLog(this, cfg);
 
-        var chatLog = _logs[cfg.Name];
-        chatLog.Open();
-        return chatLog;
+        return _logs[cfg.Name];
     }
 
     /// <summary>
@@ -55,14 +53,12 @@ public sealed class ChatLogManager : IDisposable
     /// </summary>
     private void UpdateConfigValues()
     {
-        if (Chatter.Configuration.LogDirectory != _logDirectory ||
-            Chatter.Configuration.LogFileNamePrefix != _logFileNamePrefix)
-        {
-            CloseLogs();
-            _logDirectory = Chatter.Configuration.LogDirectory;
-            _logFileNamePrefix = Chatter.Configuration.LogFileNamePrefix;
-            _logStartTime = DateTime.Now;
-        }
+        if (Chatter.Configuration.LogDirectory == _logDirectory &&
+            Chatter.Configuration.LogFileNamePrefix == _logFileNamePrefix) return;
+        CloseLogs();
+        _logDirectory = Chatter.Configuration.LogDirectory;
+        _logFileNamePrefix = Chatter.Configuration.LogFileNamePrefix;
+        _logStartTime = DateTime.Now;
     }
 
     /// <summary>
@@ -103,6 +99,7 @@ public sealed class ChatLogManager : IDisposable
     /// </summary>
     public abstract class ChatLog : IDisposable
     {
+        private static readonly Configuration.ChatLogConfiguration.ChatTypeFlag DefaultChatTypeFlag = new();
         private readonly ChatLogManager _manager;
         protected readonly Configuration.ChatLogConfiguration Config;
 
@@ -118,7 +115,7 @@ public sealed class ChatLogManager : IDisposable
         public string FileName { get; private set; } = string.Empty;
 
         /// <summary>
-        ///     The StreamWriter that we are writing to.
+        ///     The <see cref="StreamWriter"/> that we are writing to.
         /// </summary>
         private StreamWriter Log { get; set; } = StreamWriter.Null;
 
@@ -138,13 +135,11 @@ public sealed class ChatLogManager : IDisposable
             Close();
         }
 
-        private static readonly Configuration.ChatLogConfiguration.ChatTypeFlag DefaultChatTypeFlag = new(false);
-
         /// <summary>
         ///     Determines if the give log information should be sent to the log output by examining the configuration.
         /// </summary>
         /// <param name="chatMessage">The chat message information.</param>
-        /// <returns>Returns true if this message should be logged.</returns>
+        /// <returns><c>true</c> if this message should be logged.</returns>
         protected virtual bool ShouldLog(ChatMessage chatMessage)
         {
             if (!Config.IsActive) return false;
@@ -188,6 +183,7 @@ public sealed class ChatLogManager : IDisposable
         /// <param name="line">The text to output.</param>
         private void WriteLine(string line)
         {
+            Open();
             Log.WriteLine(line);
             Log.Flush();
         }

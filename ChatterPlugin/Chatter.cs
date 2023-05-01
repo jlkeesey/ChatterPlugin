@@ -1,15 +1,20 @@
-using System.IO;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using ChatterPlugin.Friends;
 using ChatterPlugin.Localization;
+using ChatterPlugin.Properties;
 using ChatterPlugin.Windows;
 using Dalamud.Interface.Windowing;
-using Dalamud.Logging;
 using Dalamud.Plugin;
-using ImGuiNET;
+using ImGuiScene;
 
 namespace ChatterPlugin;
+
+// TODO Fix file name name/date vs date/name
+// TODO only open file when written to.
+// TODO NodaTime?
+// TODO Fix tell in vs out
+// TODO Fix Simi Faerie
+// TODO Fix output format
+// TODO fix tell
 
 public sealed partial class Chatter : IDalamudPlugin
 {
@@ -24,7 +29,6 @@ public sealed partial class Chatter : IDalamudPlugin
             Dalamud.Initialize(pluginInterface);
             Version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "";
             Loc.Load();
-            //Loc.Debug();
 
             Configuration = Configuration.Load();
 
@@ -33,9 +37,7 @@ public sealed partial class Chatter : IDalamudPlugin
             ChatLogManager = new ChatLogManager();
             ChatManager = new ChatManager(ChatLogManager);
 
-            // you might normally want to embed resources and load them from the manifest stream
-            // var imagePath = Path.Combine(Dalamud.PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");
-            // var goatImage = this.PluginInterface.UiBuilder.LoadImage(imagePath);
+            ChatterImage = Dalamud.PluginInterface.UiBuilder.LoadImage(Resources.chatter);
 
             _windowManager = new JlkWindowManager(this);
             RegisterCommands();
@@ -54,6 +56,7 @@ public sealed partial class Chatter : IDalamudPlugin
     public static Configuration Configuration { get; private set; }
 #pragma warning restore CS8618
 
+    public TextureWrap? ChatterImage { get; init; }
     public ChatManager ChatManager { get; }
     public ChatLogManager ChatLogManager { get; }
     public WindowSystem WindowSystem { get; private set; }
@@ -64,6 +67,7 @@ public sealed partial class Chatter : IDalamudPlugin
         Configuration?.Save(); // Should be auto-saved but let's be sure
 
         UnregisterCommands();
+        ChatterImage?.Dispose();
         ChatLogManager?.Dispose();
         ChatManager?.Dispose();
         _windowManager?.Dispose();

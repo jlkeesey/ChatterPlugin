@@ -1,9 +1,10 @@
 {
   "Author": "James Keesey",
   "Name": "Chatter Plugin",
-  "Punchline": "Saves and filters chat dialog.",
-  "Description": "Does stuff",
+  "Punchline": "Saves and filters chats.",
+  "Description": "Saves and filters chats.",
   "InternalName": "chatterPlugin",
+  "RepoUrl": "https://github.com/jlkeesey/ChatterPlugin",
   "ApplicableVersion": "any",
   "Tags": [
     "chat",

@@ -1,17 +1,16 @@
-﻿using System;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace ChatterPlugin.Localization;
 
 /// <summary>
-/// A localized (translated) message and it's metadata.
+///     A localized (translated) message and it's metadata.
 /// </summary>
 public struct LocalizedMessage
 {
     public LocalizedMessage(string key, string? message = null, string? description = null)
     {
         Key = key;
-        Message = message ?? $"??[key]??";
+        Message = message ?? "??[key]??";
 #if DEBUG
         Description = description ?? string.Empty;
 #else
@@ -32,6 +31,9 @@ public struct LocalizedMessage
     /// <summary>
     ///     A description of the purpose of this message, i.e. how it is actually used to help with the translation.
     /// </summary>
+    /// <remarks>
+    ///     This field is never loaded into the application, it is only used by the translators.
+    /// </remarks>
     [JsonIgnore]
     public string Description { get; set; }
 }

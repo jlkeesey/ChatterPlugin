@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Security;
-using Dalamud.Logging;
 
 namespace ChatterPlugin;
 
@@ -23,9 +22,9 @@ internal class FileHelper
     private const string FileDateTimePattern = "-{0:yyyyMMdd-HHmmss}";
 
     /// <summary>
-    ///     Returns the current user's Document directory path.
+    ///     Returns the current user's <c>Document</c> directory path.
     /// </summary>
-    /// <returns>The Document directory path.</returns>
+    /// <returns>The <c>Document</c> directory path.</returns>
     public static string DocumentsDirectory()
     {
         return Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
@@ -36,11 +35,11 @@ internal class FileHelper
     /// </summary>
     /// <remarks>
     ///     Attempts to creates the given directory and returns the name of the directory if successful,
-    ///     or string.Empty if not. Any exceptions thrown by the underlying system should be caught and
-    ///     signaled as a failure by returning string.Empty.
+    ///     or <see cref="string.Empty" /> if not. Any exceptions thrown by the underlying system should be caught and
+    ///     signaled as a failure by returning <see cref="string.Empty" />.
     /// </remarks>
     /// <param name="directory">The directory oath to create.</param>
-    /// <returns>The name of the directory ot string.Empty.</returns>
+    /// <returns>The name of the directory ot <see cref="string.Empty" />.</returns>
     public static string CreateDirectory(string directory)
     {
         try
@@ -72,19 +71,17 @@ internal class FileHelper
     /// </summary>
     /// <remarks>
     ///     Unlike CreateDirectory, this will only create the last directory in the path if it does not exist.
-    ///     If any other part of the path does not exist this fails and returns string.Empty.
+    ///     If any other part of the path does not exist this fails and returns <see cref="string.Empty" />.
     /// </remarks>
     /// <param name="directory">The directory to ensure exists.</param>
-    /// <returns>The name of the directory if it exists, string.Empty otherwise.</returns>
+    /// <returns>The name of the directory if it exists, <see cref="string.Empty" /> otherwise.</returns>
     public static string EnsureDirectoryExists(string directory)
     {
         if (Directory.Exists(directory))
             return directory;
         if (File.Exists(directory))
-        {
             // TODO Add handling for this case. Preferably not allow getting here.
             return string.Empty;
-        }
 
         var parent = Path.GetDirectoryName(directory);
         if (Directory.Exists(parent))
@@ -97,8 +94,7 @@ internal class FileHelper
     ///     Returns a fully qualified path for the given path.
     /// </summary>
     /// <remarks>
-    ///     If the path is not qualified then it is made relative to the current user's
-    ///     Document directory.
+    ///     If the path is not qualified then it is made relative to the current user's <c>Document</c> directory.
     /// </remarks>
     /// <param name="path">The path to clean.</param>
     /// <returns>The fully qualified path.</returns>
@@ -131,7 +127,7 @@ internal class FileHelper
     /// </summary>
     /// <remarks>
     ///     When this plugin is first run, there needs to be a location to write log files to before
-    ///     the use has a chance to set the location. We default to a subdirectory of the user's Document
+    ///     the user has a chance to set the location. We default to a subdirectory of the user's <c>Document</c>
     ///     directory.
     /// </remarks>
     /// <returns></returns>
@@ -141,7 +137,7 @@ internal class FileHelper
     }
 
     /// <summary>
-    ///     Returns the given file name prefix with the given DateTime appended to form a complete name.
+    ///     Returns the given file name prefix with the given <see cref="DateTime" /> appended to form a complete name.
     /// </summary>
     /// <param name="prefix">The file name prefix.</param>
     /// <param name="when">The timestamp for the file name or null for the current time.</param>
@@ -152,11 +148,12 @@ internal class FileHelper
     }
 
     /// <summary>
-    ///     Returns a non-existing, fully qualified file name with the current DateTime appended.
+    ///     Returns a non-existing, fully qualified file name with the current <see cref="DateTime" /> appended.
     /// </summary>
     /// <remarks>
-    ///     This methods combines the parts and then appends the current DateTime. This path is returned ff the resulting path
-    ///     does not exist. If it does exist, then a counter value is appended until a non-existing name is created.
+    ///     This methods combines the parts and then appends the current <see cref="DateTime" />. This path is returned ff the
+    ///     resulting path does not exist. If it does exist, then a counter value is appended until a non-existing name is
+    ///     created.
     /// </remarks>
     /// <param name="directory">The directory for the file.</param>
     /// <param name="prefix">The file name prefix.</param>
@@ -164,8 +161,7 @@ internal class FileHelper
     /// <param name="when">The timestamp for the file name or null for the current time.</param>
     /// <returns>A non-existing file name.</returns>
     /// <exception cref="IndexOutOfRangeException">
-    ///     If the counter overflows. The counter is an int so more than 2G file name
-    ///     must exist for this to trigger.
+    ///     If the counter overflows. The counter is an int so more than 2G file name must exist for this to trigger.
     /// </exception>
     public static string FullFileNameWithDateTime(
         string directory, string prefix, string extension, DateTime? when = null)

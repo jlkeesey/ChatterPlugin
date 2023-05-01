@@ -1,11 +1,12 @@
 using System;
+using ChatterPlugin.Model;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 
 namespace ChatterPlugin;
 
 /// <summary>
-///     Handles capturing chat messages and passing them on the ot chat log manager for processing.
+///     Handles capturing chat messages and passing them on the to chat log manager for processing.
 /// </summary>
 public sealed class ChatManager : IDisposable
 {
@@ -28,14 +29,17 @@ public sealed class ChatManager : IDisposable
     /// <param name="xivType">The chat type.</param>
     /// <param name="senderId">The id of the sender.</param>
     /// <param name="seSender">
-    ///     The name of the sender. The will include the world name is the world is different from the user,
+    ///     The name of the sender. The will include the world name if the world is different from the user,
     ///     but the world will not be separated from the user name.
     /// </param>
     /// <param name="seMessage">
     ///     The chat message text. User names will include the world name is the world is different from the user,
     ///     but the world will not be separated from the user name.
     /// </param>
-    /// <param name="isHandled">Set to true to indicate that this handle handled the message and it should not be passed on.</param>
+    /// <param name="isHandled">
+    ///     Can be set to <c>true</c> to indicate that this handle handled the message and it should not be
+    ///     passed on.
+    /// </param>
     private void HandleChatMessage(
         XivChatType xivType, uint senderId, ref SeString seSender, ref SeString seMessage, ref bool isHandled)
     {

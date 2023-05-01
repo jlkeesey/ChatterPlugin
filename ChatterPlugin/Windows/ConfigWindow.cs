@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Numerics;
-using ChatterPlugin.Friends;
 using ChatterPlugin.Localization;
+using ChatterPlugin.Model;
 using Dalamud.Game.Text;
 using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
 using Dalamud.Utility;
 using ImGuiNET;
+using ImGuiScene;
 using static System.String;
 
 // ReSharper disable InvertIf
@@ -19,7 +20,7 @@ namespace ChatterPlugin.Windows;
 /// <summary>
 ///     Defines the configuration editing window.
 /// </summary>
-public sealed class ConfigWindow : Window, IDisposable
+public sealed partial class ConfigWindow : Window, IDisposable
 {
     private const string Title = "Chatter Configuration";
 
@@ -82,6 +83,9 @@ public sealed class ConfigWindow : Window, IDisposable
         {XivChatType.SystemMessage, Loc.Message("ChatType.SystemMessage"), Loc.Message("ChatType.SystemMessage.Help")}
     };
 
+    private readonly TextureWrap? _chatterImage;
+
+
     private readonly Configuration _configuration;
     private bool _addUserAlreadyExists;
     private string _addUserFullName = Empty;
@@ -98,8 +102,10 @@ public sealed class ConfigWindow : Window, IDisposable
     /// <summary>
     ///     Constructs the configuration editing window.
     /// </summary>
-    public ConfigWindow() : base(Title)
+    /// <param name="chatterImage">The Chatter plugin icon.</param>
+    public ConfigWindow(TextureWrap? chatterImage) : base(Title)
     {
+        _chatterImage = chatterImage;
         SizeConstraints = new WindowSizeConstraints
         {
             MinimumSize = new Vector2(450, 520),
@@ -121,15 +127,21 @@ public sealed class ConfigWindow : Window, IDisposable
     /// </summary>
     public override void Draw()
     {
+        if (_chatterImage != null)
+        {
+            ImGui.Image(_chatterImage.ImGuiHandle, new Vector2(64, 64));
+            VerticalSpace(5.0f);
+        }
+
         if (ImGui.BeginTabBar("tabBar", ImGuiTabBarFlags.None))
         {
-            if (ImGui.BeginTabItem(Loc.Message("Tab.General")))
+            if (ImGui.BeginTabItem(MsgTabGeneral))
             {
                 DrawGeneralTab();
                 ImGui.EndTabItem();
             }
 
-            if (ImGui.BeginTabItem(Loc.Message("Tab.Groups")))
+            if (ImGui.BeginTabItem(MsgTabGroups))
             {
                 DrawGroupsTab();
                 ImGui.EndTabItem();
@@ -144,14 +156,14 @@ public sealed class ConfigWindow : Window, IDisposable
     /// </summary>
     private void DrawGeneralTab()
     {
-        LongInputField(Loc.Message("Label.FileNamePrefix"), ref _configuration.LogFileNamePrefix, 50,
+        LongInputField(MsgLabelFileNamePrefix, ref _configuration.LogFileNamePrefix, 50,
             "##fileNamePrefix",
-            Loc.Message("Label.FileNamePrefix.Help"));
+            MsgLabelFileNamePrefixHelp);
 
         VerticalSpace();
 
-        LongInputField(Loc.Message("Label.SaveDirectory"), ref _configuration.LogDirectory, 1024, "##saveDirectory",
-            Loc.Message("Label.SaveDirectory.Help"));
+        LongInputField(MsgLabelSaveDirectory, ref _configuration.LogDirectory, 1024, "##saveDirectory",
+            MsgLabelSaveDirectoryHelp);
     }
 
     /// <summary>
@@ -182,33 +194,30 @@ public sealed class ConfigWindow : Window, IDisposable
         if (ImGui.BeginTable("general", 2))
         {
             ImGui.TableNextColumn();
-            DrawCheckbox(Loc.Message("Label.IsActive.Checkbox"), ref chatLog.IsActive,
-                Loc.Message("Label.IsActive.Checkbox.Help"), chatLog.Name == Configuration.AllLogName);
+            DrawCheckbox(MsgLabelIsActive, ref chatLog.IsActive, MsgLabelIsActiveHelp,
+                chatLog.Name == Configuration.AllLogName);
             ImGui.TableNextColumn();
-            DrawCheckbox(Loc.Message("Label.IncludeAllUsers.Checkbox"), ref chatLog.IncludeAllUsers,
-                Loc.Message("Label.IncludeAllUsers.Checkbox.Help"), chatLog.Name == Configuration.AllLogName);
+            DrawCheckbox(MsgLabelIncludeAllUsers, ref chatLog.IncludeAllUsers, MsgLabelIncludeAllUsersHelp,
+                chatLog.Name == Configuration.AllLogName);
             ImGui.TableNextColumn();
-            DrawCheckbox(Loc.Message("Label.IncludeServerName.Checkbox"), ref chatLog.IncludeServer,
-                Loc.Message("Label.IncludeServerName.Checkbox.Help"));
+            DrawCheckbox(MsgLabelIncludeServerName, ref chatLog.IncludeServer, MsgLabelIncludeServerNameHelp);
             ImGui.TableNextColumn();
-            DrawCheckbox(Loc.Message("Label.IncludeSelf.Checkbox"), ref chatLog.IncludeMe,
-                Loc.Message("Label.IncludeSelf.Checkbox.Help"));
+            DrawCheckbox(MsgLabelIncludeSelf, ref chatLog.IncludeMe, MsgLabelIncludeSelfHelp);
 #if DEBUG
             ImGui.TableNextColumn();
-            DrawCheckbox(Loc.Message("Label.IncludeAll.Checkbox"), ref chatLog.DebugIncludeAllMessages,
-                Loc.Message("Label.IncludeAll.Checkbox.Help"));
+            DrawCheckbox(MsgLabelIncludeAll, ref chatLog.DebugIncludeAllMessages, MsgLabelIncludeAllHelp);
 #endif
             ImGui.EndTable();
         }
 
         ImGui.Spacing();
 
-        if (ImGui.CollapsingHeader(Loc.Message("Header.IncludedUsers")))
+        if (ImGui.CollapsingHeader(MsgHeaderIncludedUsers))
         {
             VerticalSpace(5.0f);
-            ImGui.TextWrapped(Loc.Message("Description.IncludedUsers"));
+            ImGui.TextWrapped(MsgDescriptionIncludedUsers);
             VerticalSpace();
-            if (ImGui.Button(Loc.Message("Button.AddUser"))) ImGui.OpenPopup("addUser");
+            if (ImGui.Button(MsgButtonAddUser)) ImGui.OpenPopup("addUser");
 
             DrawAddUserPopup(chatLog);
 
@@ -221,8 +230,8 @@ public sealed class ConfigWindow : Window, IDisposable
             if (ImGui.BeginTable("userTable", 3, tableFlags, outerSize))
             {
                 ImGui.TableSetupScrollFreeze(0, 1); // Make top row always visible
-                ImGui.TableSetupColumn(Loc.Message("ColumnHeader.FullName"), ImGuiTableColumnFlags.WidthStretch);
-                ImGui.TableSetupColumn(Loc.Message("ColumnHeader.Replacement"), ImGuiTableColumnFlags.WidthStretch);
+                ImGui.TableSetupColumn(MsgColumnFullName, ImGuiTableColumnFlags.WidthStretch);
+                ImGui.TableSetupColumn(MsgColumnReplacement, ImGuiTableColumnFlags.WidthStretch);
                 ImGui.TableSetupColumn(Empty, ImGuiTableColumnFlags.WidthFixed, 22.0f);
                 ImGui.TableHeadersRow();
 
@@ -262,7 +271,7 @@ public sealed class ConfigWindow : Window, IDisposable
             _removeUserName = Empty;
         }
 
-        if (ImGui.CollapsingHeader(Loc.Message("Header.IncludedChatTypes")))
+        if (ImGui.CollapsingHeader(MsgHeaderIncludedChatTypes))
         {
             DrawChatTypeFlags("flagGeneral", chatLog, GeneralChatTypeFlags);
             DrawChatTypeFlags("flagLs", chatLog, LinkShellChatTypeFlags);
@@ -277,7 +286,7 @@ public sealed class ConfigWindow : Window, IDisposable
     /// <summary>
     ///     Adds vertical space to the output.
     /// </summary>
-    /// <param name="space">The amount of extra space to add.</param>
+    /// <param name="space">The amount of extra space to add in <c>ImGUI</c> units.</param>
     private static void VerticalSpace(float space = 3.0f)
     {
         ImGui.Dummy(new Vector2(0.0f, space));
@@ -295,12 +304,11 @@ public sealed class ConfigWindow : Window, IDisposable
             if (_addUserAlreadyExists)
             {
                 VerticalSpace();
-                ImGui.TextColored(new Vector4(1.0f, 0.0f, 0.0f, 1.0f), Loc.Message("Message.PlayerAlreadyInList"));
+                ImGui.TextColored(new Vector4(1.0f, 0.0f, 0.0f, 1.0f), MsgPlayerAlreadyInList);
                 VerticalSpace();
             }
 
-            LongInputField(Loc.Message("Label.PlayerFullName"), ref _addUserFullName, 128, "##playerFullName",
-                Loc.Message("Label.PlayerFullName.Help", Myself.HomeWorld),
+            LongInputField(MsgPlayerFullName, ref _addUserFullName, 128, "##playerFullName", MsgPlayerFullNameHelp,
                 extraWidth: 30, extra: () =>
                 {
                     if (DrawFindFriendButton())
@@ -313,16 +321,14 @@ public sealed class ConfigWindow : Window, IDisposable
                 });
 
             VerticalSpace();
-            LongInputField(Loc.Message("Label.PlayerReplacement"), ref _addUserReplacementName, 128,
-                "##playerReplaceName",
-                Loc.Message("Label.PlayerReplacement.Help"),
-                extraWidth: 30);
+            LongInputField(MsgPlayerReplacement, ref _addUserReplacementName, 128, "##playerReplaceName",
+                MsgPlayerReplacementHelp, extraWidth: 30);
 
             VerticalSpace();
             ImGui.Separator();
             VerticalSpace();
 
-            if (ImGui.Button(Loc.Message("Button.Add"), new Vector2(120, 0)))
+            if (ImGui.Button(MsgButtonAdd, new Vector2(120, 0)))
             {
                 _addUserAlreadyExists = false;
                 var fullName = _addUserFullName.Trim();
@@ -338,7 +344,7 @@ public sealed class ConfigWindow : Window, IDisposable
             }
 
             ImGui.SameLine();
-            if (ImGui.Button(Loc.Message("Button.Cancel"), new Vector2(120, 0)))
+            if (ImGui.Button(MsgButtonCancel, new Vector2(120, 0)))
             {
                 _addUserAlreadyExists = false;
                 ImGui.CloseCurrentPopup();
@@ -377,7 +383,7 @@ public sealed class ConfigWindow : Window, IDisposable
             }
 
             ImGui.Separator();
-            if (ImGui.Button(Loc.Message("Button.Add"), new Vector2(120, 0)))
+            if (ImGui.Button(MsgButtonAdd, new Vector2(120, 0)))
             {
                 if (!_selectedFriend.IsNullOrWhitespace())
                     targetUserFullName = _selectedFriend;
@@ -385,7 +391,7 @@ public sealed class ConfigWindow : Window, IDisposable
             }
 
             ImGui.SameLine();
-            if (ImGui.Button(Loc.Message("Button.Cancel"), new Vector2(120, 0))) ImGui.CloseCurrentPopup();
+            if (ImGui.Button(MsgButtonCancel, new Vector2(120, 0))) ImGui.CloseCurrentPopup();
 
             ImGui.EndPopup();
         }
@@ -394,28 +400,28 @@ public sealed class ConfigWindow : Window, IDisposable
     /// <summary>
     ///     Draws the button that brings up the friend selection dialog.
     /// </summary>
-    /// <returns>True if the button was pressed.</returns>
+    /// <returns><c>true</c> if the button was pressed.</returns>
     private static bool DrawClearFilterButton()
     {
         ImGui.PushFont(UiBuilder.IconFont);
         var buttonPressed = ImGui.Button($"{(char) FontAwesomeIcon.SquareXmark}##findFriend");
         ImGui.PopFont();
         if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-            DrawTooltip(Loc.Message("Button.ClearFilter.Help"));
+            DrawTooltip(MsgButtonClearFilterHelp);
         return buttonPressed;
     }
 
     /// <summary>
     ///     Draws the button that brings up the friend selection dialog.
     /// </summary>
-    /// <returns>True if the button was pressed.</returns>
+    /// <returns><c>true</c> if the button was pressed.</returns>
     private static bool DrawFindFriendButton()
     {
         ImGui.PushFont(UiBuilder.IconFont);
         var buttonPressed = ImGui.Button($"{(char) FontAwesomeIcon.PersonCirclePlus}##findFriend");
         ImGui.PopFont();
         if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-            DrawTooltip(Loc.Message("Button.FriendSelector.Help"));
+            DrawTooltip(MsgButtonFriendSelectorHelp);
         return buttonPressed;
     }
 
@@ -423,7 +429,7 @@ public sealed class ConfigWindow : Window, IDisposable
     ///     Draws the button that brings up the remove user dialog.
     /// </summary>
     /// <param name="user">Which user is being removed.</param>
-    /// <returns>True if the button was pressed.</returns>
+    /// <returns><c>true</c> if the button was pressed.</returns>
     private static bool DrawUserRemoveButton(string user)
     {
         ImGui.PushFont(UiBuilder.IconFont);
@@ -439,17 +445,17 @@ public sealed class ConfigWindow : Window, IDisposable
     {
         if (ImGui.BeginPopupModal("removeUser", ref _removeDialogIsOpen, ImGuiWindowFlags.AlwaysAutoResize))
         {
-            ImGui.TextWrapped(Loc.Message("Button.FriendSelector.Help", _removeDialogUser));
+            ImGui.TextWrapped(Loc.Message("Text.RemoveUser", _removeDialogUser));
             ImGui.Separator();
 
-            if (ImGui.Button(Loc.Message("Button.Remove"), new Vector2(120, 0)))
+            if (ImGui.Button(MsgButtonRemove, new Vector2(120, 0)))
             {
                 _removeUserName = _removeDialogUser;
                 ImGui.CloseCurrentPopup();
             }
 
             ImGui.SameLine();
-            if (ImGui.Button(Loc.Message("Button.Cancel"), new Vector2(120, 0))) ImGui.CloseCurrentPopup();
+            if (ImGui.Button(MsgButtonCancel, new Vector2(120, 0))) ImGui.CloseCurrentPopup();
 
 
             ImGui.EndPopup();
@@ -460,9 +466,9 @@ public sealed class ConfigWindow : Window, IDisposable
     ///     Draws a check box control with the optional help text.
     /// </summary>
     /// <param name="label">The label for the checkbox.</param>
-    /// <param name="itemChecked">True if this check box is checked.</param>
+    /// <param name="itemChecked"><c>true</c> if this check box is checked.</param>
     /// <param name="helpText">The optional help text.</param>
-    /// <param name="disabled">True if this control should be disabled.</param>
+    /// <param name="disabled"><c>true</c> if this control should be disabled.</param>
     private static void DrawCheckbox(string label, ref bool itemChecked, string? helpText = null, bool disabled = false)
     {
         if (disabled) ImGui.BeginDisabled();
@@ -525,7 +531,7 @@ public sealed class ConfigWindow : Window, IDisposable
     /// </summary>
     /// <param name="label">The label for the flag.</param>
     /// <param name="flag">The flag value location.</param>
-    /// <param name="helpText">optional help description for this chat type.</param>
+    /// <param name="helpText">Optional help description for this chat type.</param>
     private static void DrawFlag(string label, ref bool flag, string? helpText = null)
     {
         ImGui.TableNextColumn();
@@ -561,8 +567,8 @@ public sealed class ConfigWindow : Window, IDisposable
     /// <summary>
     ///     Adds a help button that shows the given help text when hovered over.
     /// </summary>
-    /// <param name="description">The description to show. If this is null, empty, or all whitespace, nothing is created.</param>
-    /// <param name="sameLine">True if this should be on the same line as the previous item.</param>
+    /// <param name="description">The description to show. If this is <c>null</c>, empty, or all whitespace, nothing is created.</param>
+    /// <param name="sameLine"><c>true</c> if this should be on the same line as the previous item.</param>
     private static void HelpMarker(string? description, bool sameLine = true)
     {
         var text = description?.Trim() ?? Empty;
@@ -579,7 +585,7 @@ public sealed class ConfigWindow : Window, IDisposable
     /// <summary>
     ///     Creates a tooltip box with the given content text which will be wrapped as necessary.
     /// </summary>
-    /// <param name="description">The contents of the tooltip box. If null or empty the tooltip box is not created.</param>
+    /// <param name="description">The contents of the tooltip box. If <c>null</c> or empty the tooltip box is not created.</param>
     private static void DrawTooltip(string? description)
     {
         var text = description?.Trim() ?? Empty;

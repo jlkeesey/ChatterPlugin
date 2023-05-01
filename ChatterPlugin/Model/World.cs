@@ -1,7 +1,8 @@
 ﻿namespace ChatterPlugin.Data;
 
 /// <summary>
-///     Represents an FFXIV world.
+///     Represents an FFXIV world. FFXIV has it's own type but it's not easily consumable by C# so
+///     when a world is loaded from FFXIV it is converted to this object type.
 /// </summary>
 public class World
 {

@@ -8,12 +8,12 @@ namespace ChatterPlugin;
 /// <summary>
 ///     Contains all of the user configuration settings.
 /// </summary>
-/// <remarks>
-///     Config stuff.
-/// </remarks>
 [Serializable]
 public class Configuration : IPluginConfiguration
 {
+    /// <summary>
+    ///     The name of the log that saves all messages aka the all log.
+    /// </summary>
     public const string AllLogName = "all";
 
     /// <summary>
@@ -22,14 +22,14 @@ public class Configuration : IPluginConfiguration
     public sealed class ChatLogConfiguration
     {
         /// <summary>
-        ///     The include/exclude flags for each ChatType.
+        ///     The include/exclude flags for each <see cref="XivChatType" />.
         /// </summary>
         public readonly Dictionary<XivChatType, ChatTypeFlag> ChatTypeFilterFlags = new();
 
         /// <summary>
-        ///     When true all messages get written to this log including ones that normally would be filtered out. This is
-        ///     different from the IncludeAllUsers in that it will include all messages from all users it will also include all
-        ///     messages of all chat types.
+        ///     When <c>true</c> all messages get written to this log including ones that normally would be filtered out. This is
+        ///     different from the <see cref="IncludeAllUsers" /> in that it will include all messages from all users it will also
+        ///     include all messages of all chat types.
         /// </summary>
         public bool DebugIncludeAllMessages;
 
@@ -79,18 +79,20 @@ public class Configuration : IPluginConfiguration
         public string? Format;
 
         /// <summary>
-        ///     If true the all users will be included even if they are not in the user list. This will always be true for the
+        ///     If <c>true</c> the all users will be included even if they are not in the user list. This will always be
+        ///     <c>true</c> for the
         ///     all user.
         /// </summary>
         public bool IncludeAllUsers;
 
         /// <summary>
-        ///     If true then I am included in the log even if I'm not in the user list. This will generally be true always.
+        ///     If <c>true</c> then I am included in the log even if I'm not in the user list. This will generally be <c>true</c>
+        ///     always.
         /// </summary>
         public bool IncludeMe;
 
         /// <summary>
-        ///     If this is true then server names are included in the output, otherwise they are stripped from
+        ///     If this is <c>true</c> then server names are included in the output, otherwise they are stripped from
         ///     the output, both in the name column as well as the message.
         /// </summary>
         public bool IncludeServer;
@@ -124,7 +126,8 @@ public class Configuration : IPluginConfiguration
         ///     The set of users to include.
         /// </summary>
         /// <remarks>
-        ///     The key is the full name of the user to include, if the value is not string.Empty, it what the user's
+        ///     The key is the full name of the user to include, if the value is not <see cref="string.Empty" />, it is what the
+        ///     user's
         ///     name should be renamed in the output. If this is empty, then all users are included.
         /// </remarks>
         public SortedDictionary<string, string> Users { get; init; } = new();
@@ -202,16 +205,13 @@ public class Configuration : IPluginConfiguration
     /// <returns>The configuration to use.</returns>
     public static Configuration Load()
     {
-//         Configuration config = new Configuration();
         if (Dalamud.PluginInterface.GetPluginConfig() is not Configuration config) config = new Configuration();
-        // else
-        // {
-        //     Add migration here
-        // }
 
         if (!config.ChatLogs.ContainsKey(AllLogName))
             config.AddLog(new ChatLogConfiguration(AllLogName, true, includeAllUsers: true));
 
+#if DEBUG
+        /// TODO remove before shipping
         var logConfiguration = new ChatLogConfiguration("Tifaa", true);
         logConfiguration.Users["Tifaa Sidrasylan"] = string.Empty;
         logConfiguration.Users["Aelym Sidrasylan"] = "Stud Muffin";
@@ -219,6 +219,7 @@ public class Configuration : IPluginConfiguration
         config.AddLog(logConfiguration);
         config.AddLog(new ChatLogConfiguration("Pups", true));
         config.AddLog(new ChatLogConfiguration("Goobtube"));
+#endif
 
         foreach (var (_, chatLogConfiguration) in config.ChatLogs) chatLogConfiguration.InitializeTypeFlags();
 

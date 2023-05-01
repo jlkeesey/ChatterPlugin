@@ -3,23 +3,31 @@ using Dalamud.Interface.Windowing;
 
 namespace ChatterPlugin.Windows;
 
+/// <summary>
+///     Manages the top-level windows of the plugin including binding them with the plugin system.
+/// </summary>
 public sealed class JlkWindowManager : IDisposable
 {
     private readonly Chatter _chatter;
     private readonly ConfigWindow _configWindow;
-    // private readonly MainWindow _mainWindow;
 
+    /// <summary>
+    ///     Creates the manager, all top-level windows, and binds them where needed.
+    /// </summary>
+    /// <param name="chatter">The plugin object.</param>
     public JlkWindowManager(Chatter chatter)
     {
-        this._chatter = chatter;
+        _chatter = chatter;
 
-        _configWindow = Add(new ConfigWindow());
-        // _mainWindow = Add(new MainWindow(chatter));
+        _configWindow = Add(new ConfigWindow(_chatter.ChatterImage));
 
         Dalamud.PluginInterface.UiBuilder.Draw += chatter.WindowSystem.Draw;
         Dalamud.PluginInterface.UiBuilder.OpenConfigUi += ToggleConfig;
     }
 
+    /// <summary>
+    ///     Unbinds from the plugin window system.
+    /// </summary>
     public void Dispose()
     {
         Dalamud.PluginInterface.UiBuilder.OpenConfigUi -= ToggleConfig;
@@ -27,20 +35,23 @@ public sealed class JlkWindowManager : IDisposable
 
         _chatter.WindowSystem.RemoveAllWindows();
 
-        // _mainWindow.Dispose();
         _configWindow.Dispose();
     }
 
-    // public void ToggleMain()
-    // {
-    //     _mainWindow.IsOpen = !_mainWindow.IsOpen;
-    // }
-
+    /// <summary>
+    ///     Toggles the visibility of the configuration window.
+    /// </summary>
     public void ToggleConfig()
     {
         _configWindow.IsOpen = !_configWindow.IsOpen;
     }
 
+    /// <summary>
+    ///     Adds the given window to the plugin system window list.
+    /// </summary>
+    /// <typeparam name="TType">The window type.</typeparam>
+    /// <param name="window">The window to add.</param>
+    /// <returns>The given window.</returns>
     private TType Add<TType>(TType window) where TType : Window
     {
         _chatter.WindowSystem.AddWindow(window);

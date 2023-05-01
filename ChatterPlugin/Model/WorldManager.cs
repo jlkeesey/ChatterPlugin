@@ -3,34 +3,25 @@
 namespace ChatterPlugin.Data;
 
 /// <summary>
-///     Utilities for manipulating World objects.
+///     Utilities for manipulating <see cref="World" /> objects.
 /// </summary>
 public class WorldManager
 {
     private static readonly Dictionary<uint, World> Worlds = new();
-    // private static readonly World DefaultWorld = new World(0, "?world?", "?dc?");
 
     /// <summary>
-    ///     Retrieve the world object from the given id.
+    ///     Retrieve the <see cref="World" /> object from the given id. The data is retrieve from FFXIV if necessary and
+    ///     converted to a <see cref="World" /> object.
     /// </summary>
     /// <param name="id">The id to lookup.</param>
-    /// <returns>The found world. This will always return an object, even if the data cannot be found.</returns>
+    /// <returns>The found <see cref="World" />. This will always return an object, even if the data cannot be found.</returns>
     public static World GetWorld(uint id)
     {
         if (Worlds.TryGetValue(id, out var world)) return world;
+        // TODO Use this code to rewrite DataCenter.cs
         var w = Dalamud.GameData.Excel.GetSheet<Lumina.Excel.GeneratedSheets.World>()?.GetRow(id);
         world = new World(id, w?.Name.ToString() ?? "?world?", w?.DataCenter?.Value?.Name ?? "?dc?");
         Worlds.Add(id, world);
         return world;
     }
-    //
-    // /// <summary>
-    // /// Returns the 
-    // /// </summary>
-    // /// <param name="name"></param>
-    // /// <returns></returns>
-    // public static World GetWorld(string name)
-    // {
-    //     return Worlds.Select(w => w.Value).Where(w => w.Name == name).FirstOrDefault(DefaultWorld);
-    // }
 }

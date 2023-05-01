@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using ChatterPlugin.Data;
 
-namespace ChatterPlugin.Friends;
+namespace ChatterPlugin.Model;
 
 /// <summary>
-///     Represents a single friend.
+///     Represents a single FFXIV friend. FFXIV has it's own type but it's not easily consumable by C# so
+///     when a friend is loaded from FFXIV it is converted to this object type.
 /// </summary>
 public class Friend : IComparable<Friend>, IComparable
 {
@@ -15,7 +16,7 @@ public class Friend : IComparable<Friend>, IComparable
     public readonly ulong ContentId;
 
     /// <summary>
-    ///     The world this friend is currently on.
+    ///     The <see cref="World" /> this friend is currently on.
     /// </summary>
     public readonly World CurrentWorld;
 
@@ -25,7 +26,7 @@ public class Friend : IComparable<Friend>, IComparable
     public readonly string FreeCompany;
 
     /// <summary>
-    ///     This friend's home world.
+    ///     This friend's home <see cref="World" />.
     /// </summary>
     public readonly World HomeWorld;
 
@@ -51,7 +52,7 @@ public class Friend : IComparable<Friend>, IComparable
     }
 
     /// <summary>
-    ///     This friend's full name which is the Name and HomeWorld combined.
+    ///     This friend's full name which is the <see cref="Name"/> and <see cref="HomeWorld"/> combined.
     /// </summary>
     public string FullName => $"{Name}@{HomeWorld.Name}";
 

@@ -2,15 +2,14 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using ChatterPlugin.Data;
-using Dalamud.Logging;
 using Dalamud.Memory;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 
-namespace ChatterPlugin.Friends;
+namespace ChatterPlugin.Model;
 
 /// <summary>
-///     Utilities for manipulating friends.
+///     Utilities for manipulating <see cref="Friend"/> objects.
 /// </summary>
 public static class FriendManager
 {
@@ -18,28 +17,32 @@ public static class FriendManager
     private const int LengthOffset = 0x10;
     private const int ListOffset = 0x98;
 
+    /// <summary>
+    /// Returns a list of all of the current player's friends.
+    /// </summary>
+    /// <returns>A list of <see cref="Friend"/> objects.</returns>
     public static unsafe IReadOnlyList<Friend> GetFriends()
     {
         List<Friend> friends = new();
 
-        var socialFriendAgent = (IntPtr) Framework.Instance()->
+        var socialFriendAgent = (IntPtr)Framework.Instance()->
                     GetUiModule()->
                 GetAgentModule()->
             GetAgentByInternalId(AgentId.SocialFriendList);
         if (socialFriendAgent == IntPtr.Zero) return friends;
 
-        var info = *(IntPtr*) (socialFriendAgent + InfoOffset);
+        var info = *(IntPtr*)(socialFriendAgent + InfoOffset);
         if (info == IntPtr.Zero) return friends;
 
-        var length = *(ushort*) (info + LengthOffset);
+        var length = *(ushort*)(info + LengthOffset);
         if (length == 0) return friends;
 
-        var list = *(IntPtr*) (info + ListOffset);
+        var list = *(IntPtr*)(info + ListOffset);
         if (list == IntPtr.Zero) return friends;
 
         for (var i = 0; i < length; i++)
         {
-            var entry = (FriendEntry*) (list + i * FriendEntry.Size);
+            var entry = (FriendEntry*)(list + i * FriendEntry.Size);
             var homeWorld = WorldManager.GetWorld(entry->HomeWorld);
             var currentWorld = WorldManager.GetWorld(entry->CurrentWorld);
             friends.Add(new Friend(entry->ContentId, entry->Name, entry->FreeCompany, homeWorld, currentWorld,
@@ -49,6 +52,9 @@ public static class FriendManager
         return friends;
     }
 
+    /// <summary>
+    /// Helper struct to extract information from the FFXIV friend object.
+    /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = Size)]
     private unsafe struct FriendEntry
     {
@@ -98,7 +104,7 @@ public static class FriendManager
             {
                 fixed (byte* ptr = RawName)
                 {
-                    return MemoryHelper.ReadSeStringNullTerminated((IntPtr) ptr).TextValue;
+                    return MemoryHelper.ReadSeStringNullTerminated((IntPtr)ptr).TextValue;
                 }
             }
         }
@@ -112,7 +118,7 @@ public static class FriendManager
             {
                 fixed (byte* ptr = RawFreeCompany)
                 {
-                    return MemoryHelper.ReadSeStringNullTerminated((IntPtr) ptr).TextValue;
+                    return MemoryHelper.ReadSeStringNullTerminated((IntPtr)ptr).TextValue;
                 }
             }
         }

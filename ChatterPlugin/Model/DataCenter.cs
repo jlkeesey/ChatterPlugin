@@ -1,15 +1,15 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace ChatterPlugin;
+namespace ChatterPlugin.Model;
 
 /// <summary>
 ///     Data center information as of patch 6.38.
 /// </summary>
 internal class DataCenter
 {
-    private static SortedSet<string>? DataCenterList;
-    private static SortedSet<string>? ServersList;
+    private static SortedSet<string>? _dataCenterList;
+    private static SortedSet<string>? _serversList;
     private static readonly SortedSet<string> EmptySet = new();
 
     /// <summary>
@@ -17,6 +17,8 @@ internal class DataCenter
     /// </summary>
     private static readonly Dictionary<string, SortedSet<string>> DataCenterData = new()
     {
+        // TODO replace this with calls to internal sheets when I can figure them out
+
         // ReSharper disable StringLiteralTypo
         {
             "Aether",
@@ -103,7 +105,7 @@ internal class DataCenter
     /// </summary>
     public static IReadOnlySet<string> Servers
     {
-        get { return ServersList ??= new SortedSet<string>(DataCenterData.SelectMany(d => d.Value)); }
+        get { return _serversList ??= new SortedSet<string>(DataCenterData.SelectMany(d => d.Value)); }
     }
 
     /// <summary>
@@ -111,7 +113,7 @@ internal class DataCenter
     /// </summary>
     public static IReadOnlySet<string> DataCenters
     {
-        get { return DataCenterList ??= new SortedSet<string>(DataCenterData.Keys); }
+        get { return _dataCenterList ??= new SortedSet<string>(DataCenterData.Keys); }
     }
 
     /// <summary>

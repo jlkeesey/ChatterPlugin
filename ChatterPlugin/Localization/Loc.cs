@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.IO;
 using System.Text.Json;
+using ChatterPlugin.Properties;
 using Dalamud.Logging;
 using Dalamud.Utility;
 
@@ -25,12 +26,13 @@ public class Loc
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         The are up to 3 messages files that are read. The first is messages.json which contains the fallback
+    ///         The are up to 3 messages resources that are read. The first is messages which contains the fallback
     ///         for all messages (it is in en-US as that is where the author is from). The second is the language specific
-    ///         file which is based on the current CultureInfo. The name of the file is messages-LL.json where LL is
-    ///         the two letter language code e.g. en for English. The third is the culture specific file which is
-    ///         based on the current CultureInfo and RegionInfo. The name of the file is messages-LL-CC.json where
-    ///         LL is the two letter language code as above and CC is the two letter country code e.g. US for United States.
+    ///         resource which is based on the current CultureInfo. The name of the resource is messages-LL where LL is
+    ///         the two letter language code e.g. en for English. The third is the culture specific resource which is
+    ///         based on the current <see cref="CultureInfo" /> and <see cref="RegionInfo" />. The name of the resource is
+    ///         messages-LL-CC where LL is the two letter language code as above and CC is the two letter country code e.g. US
+    ///         for United States.
     ///     </para>
     /// </remarks>
     public static void Load()
@@ -66,31 +68,30 @@ public class Loc
     }
 
     /// <summary>
-    ///     Loads ans parses a message list JSON file into a LocalizedMessageList.
+    ///     Loads and parses a message list JSON resource into a <see cref="LocalizedMessageList" />.
     /// </summary>
-    /// <param name="suffix">The suffix for the file, maybe empty.</param>
-    /// <returns>The loaded LocalizedMessageList or null if the file was not found.</returns>
+    /// <param name="suffix">The suffix for the resource, maybe empty.</param>
+    /// <returns>The loaded <see cref="LocalizedMessageList" /> or null if the resource was not found.</returns>
     private static LocalizedMessageList? LoadMessageList(string suffix)
     {
-        var fileName = suffix.IsNullOrWhitespace() ? "messages.json" : $"messages-{suffix}.json";
-        var messageFilePath = Path.Combine(Dalamud.PluginInterface.AssemblyLocation.Directory?.FullName!,
-            "Localization", fileName);
-        if (!File.Exists(messageFilePath))
-        {
-            return null;
-        }
-
-        var fileContents = ReadFile(messageFilePath);
-        return ParseList(messageFilePath, fileContents);
+        var resourceName = suffix.IsNullOrWhitespace() ? "messages" : $"messages-{suffix}";
+        if (Resources.ResourceManager.GetObject(resourceName) is not byte[] content) return null;
+        using var stream = new MemoryStream(content);
+        using var reader = new StreamReader(stream);
+        var result = reader.ReadToEnd();
+        return ParseList(resourceName, result);
     }
 
     /// <summary>
-    ///     Parses a JSON string into a LocalizedMessageList.
+    ///     Parses a JSON string into a <see cref="LocalizedMessageList" />.
     /// </summary>
-    /// <param name="fileName">The file name that the JSON string was read from.</param>
+    /// <param name="resourceName">The resource name that the JSON string was read from.</param>
     /// <param name="json">The JSON string to parse.</param>
-    /// <returns>The parsed LocalizedMessageList or an empty LocalizedMessageList if the string could not be parsed.</returns>
-    private static LocalizedMessageList ParseList(string fileName, string json)
+    /// <returns>
+    ///     The parsed <see cref="LocalizedMessageList" /> or an empty LocalizedMessageList if the string could not be
+    ///     parsed.
+    /// </returns>
+    private static LocalizedMessageList ParseList(string resourceName, string json)
     {
         LocalizedMessageList? lml = null;
         try
@@ -99,32 +100,14 @@ public class Loc
         }
         catch (Exception ex)
         {
-            PluginLog.Error(ex, $"Cannot parse JSON message file: '{fileName}'");
+            PluginLog.Error(ex, $"Cannot parse JSON message resource: '{resourceName}'");
         }
 
         return lml ?? new LocalizedMessageList();
     }
 
     /// <summary>
-    ///     Reads the contents of a JSON file.
-    /// </summary>
-    /// <param name="filePath">The path to the file.</param>
-    /// <returns>Returns the file contents or string.Empty of the file could not be read.</returns>
-    private static string ReadFile(string filePath)
-    {
-        try
-        {
-            return File.ReadAllText(filePath);
-        }
-        catch (IOException ex)
-        {
-            PluginLog.Error(ex, $"Cannot read message file: '{filePath}'");
-            return string.Empty;
-        }
-    }
-
-    /// <summary>
-    ///     Looks up the message by key from the language files and returns it formatted with the given arguments.
+    ///     Looks up the message by key from the language resources and returns it formatted with the given arguments.
     /// </summary>
     /// <remarks>
     ///     <para>

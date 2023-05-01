@@ -7,11 +7,12 @@ using Dalamud.Utility;
 
 namespace ChatterPlugin;
 
+/// <summary>
+///     Handles the text commands for this plugin.
+/// </summary>
 public sealed partial class Chatter
 {
     private const string CommandChatter = "/chatter";
-    private const string CommandConfig = "/chatterconfig";
-    private const string CommandCfg = "/chattercfg";
     private const string CommandDebug = "/chatterdebug";
 
     private const string DebugChatDump = "chatdump";
@@ -24,21 +25,16 @@ public sealed partial class Chatter
         {"debug", () => Configuration.IsDebug}
     };
 
+    /// <summary>
+    ///     Registers all of the text commands with the Dalamud plugin environment.
+    /// </summary>
     private void RegisterCommands()
     {
-        // _commands[CommandChatter] = new CommandInfo(OnChatter)
-        // {
-        //     HelpMessage = "Opens the Chatter interface.",
-        //     ShowInHelp = true
-        // };
-
-        _commands[CommandConfig] = new CommandInfo(OnChatterConfig)
+        _commands[CommandChatter] = new CommandInfo(OnChatterConfig)
         {
             HelpMessage = "Opens the Chatter configuration window.",
             ShowInHelp = true
         };
-        _commands[CommandChatter] = _commands[CommandConfig];
-        _commands[CommandCfg] = _commands[CommandConfig];
 
         _commands[CommandDebug] = new CommandInfo(OnChatterDebug)
         {
@@ -49,25 +45,32 @@ public sealed partial class Chatter
         foreach (var (command, info) in _commands) Dalamud.Commands.AddHandler(command, info);
     }
 
+    /// <summary>
+    ///     Unregisters all the text commands from the Dalamud plugin environment.
+    /// </summary>
     private void UnregisterCommands()
     {
         foreach (var command in _commands.Keys) Dalamud.Commands.RemoveHandler(command);
     }
 
-    // private void OnChatter(string command, string arguments)
-    // {
-    //     _windowManager.ToggleMain();
-    // }
-
+    /// <summary>
+    ///     Handles the <c>/chatter</c> text command. This just toggles the configuration window.
+    /// </summary>
+    /// <param name="command">The text of the command (in case of aliases).</param>
+    /// <param name="arguments">Any arguments to the command.</param>
     private void OnChatterConfig(string command, string arguments)
     {
         _windowManager.ToggleConfig();
     }
 
+    // ReSharper disable once CommentTypo
+    /// <summary>
+    ///     Handles the <c>/chatterdebug</c> text command.
+    /// </summary>
+    /// <param name="command">The text of the command (in case of aliases).</param>
+    /// <param name="arguments">Any arguments to the command.</param>
     private void OnChatterDebug(string command, string arguments)
     {
-        PluginLog.Log($"Debug command: '{arguments}'");
-        PluginLog.Debug($"Debug command: '{arguments}'");
         if (arguments.IsNullOrEmpty())
         {
             Configuration.IsDebug = !Configuration.IsDebug;
@@ -91,6 +94,9 @@ public sealed partial class Chatter
             }
         }
 
+        // <summary>
+        //     Handles the list debug flags sub command.
+        // </summary>
         void ListDebugFlags()
         {
             var length = _debugFlags.Keys.Select(x => x.Length).Max();
@@ -101,6 +107,9 @@ public sealed partial class Chatter
             foreach (var (name, func) in _debugFlags) ListDebugFlag(name, func(), length);
         }
 
+        // <summary>
+        //     Lists one debug flag.
+        // </summary>
         void ListDebugFlag(string name, bool value, int length)
         {
             var onOff = value ? "on" : "off";
