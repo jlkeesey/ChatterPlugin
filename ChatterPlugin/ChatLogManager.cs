@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using ChatterPlugin.Model;
 using Dalamud.Game.Text;
 using Dalamud.Logging;
 using Dalamud.Utility;
@@ -32,10 +31,10 @@ public sealed class ChatLogManager : IDisposable
     }
 
     /// <summary>
-    ///     Returns the <see cref="ChatLog"/> for the given configuration. If one does not exist then a new one is created.
+    ///     Returns the <see cref="ChatLog" /> for the given configuration. If one does not exist then a new one is created.
     /// </summary>
     /// <param name="cfg">The configuration to use for this log.</param>
-    /// <returns>The <see cref="ChatLog"/></returns>
+    /// <returns>The <see cref="ChatLog" /></returns>
     public ChatLog GetLog(Configuration.ChatLogConfiguration cfg)
     {
         UpdateConfigValues();
@@ -88,7 +87,7 @@ public sealed class ChatLogManager : IDisposable
     /// <param name="senderId">The id of the sender.</param>
     /// <param name="sender">The name of the sender. This may include a server name separated by and @ sign.</param>
     /// <param name="message">The text of chat. User names in the message may include a server name separated by and @ sign.</param>
-    public void LogInfo(XivChatType xivType, uint senderId, string sender, string message)
+    public void LogInfo(XivChatType xivType, uint senderId, ChatString sender, ChatString message)
     {
         foreach (var (_, configurationChatLog) in Chatter.Configuration.ChatLogs)
             GetLog(configurationChatLog).LogInfo(xivType, senderId, sender, message);
@@ -115,7 +114,7 @@ public sealed class ChatLogManager : IDisposable
         public string FileName { get; private set; } = string.Empty;
 
         /// <summary>
-        ///     The <see cref="StreamWriter"/> that we are writing to.
+        ///     The <see cref="StreamWriter" /> that we are writing to.
         /// </summary>
         private StreamWriter Log { get; set; } = StreamWriter.Null;
 
@@ -159,7 +158,7 @@ public sealed class ChatLogManager : IDisposable
         /// <param name="senderId">The id of the sender.</param>
         /// <param name="sender">The name of the sender. This may include a server name separated by and @ sign.</param>
         /// <param name="message">The text of chat. User names in the message may include a server name separated by and @ sign.</param>
-        public void LogInfo(XivChatType xivType, uint senderId, string sender, string message)
+        public void LogInfo(XivChatType xivType, uint senderId, ChatString sender, ChatString message)
         {
             var chatMessage = new ChatMessage(Config, xivType, senderId, sender, message);
             if (ShouldLog(chatMessage)) WriteLog(chatMessage);
@@ -193,7 +192,7 @@ public sealed class ChatLogManager : IDisposable
         /// </summary>
         public void Open()
         {
-            if (Log != StreamWriter.Null) return;
+            if (IsOpen) return;
             FileName =
                 FileHelper.FullFileNameWithDateTime(_manager._logDirectory,
                     $"{_manager._logFileNamePrefix}-{Config.Name}",
@@ -208,7 +207,7 @@ public sealed class ChatLogManager : IDisposable
         /// </summary>
         public void Close()
         {
-            if (Log != StreamWriter.Null)
+            if (!IsOpen)
             {
                 Log.Close();
                 Log = StreamWriter.Null;
@@ -221,7 +220,7 @@ public sealed class ChatLogManager : IDisposable
         /// </summary>
         public void DumpLog()
         {
-            PluginLog.Log($"{Config.Name,-12}  {Log != StreamWriter.Null,-5}  '{FileName}'");
+            PluginLog.Log($"{Config.Name,-12}  {IsOpen,-5}  '{FileName}'");
         }
 
         /// <summary>
@@ -235,7 +234,7 @@ public sealed class ChatLogManager : IDisposable
             private string? _typeLabel;
 
             public ChatMessage(Configuration.ChatLogConfiguration configuration, XivChatType xivType, uint senderId,
-                string sender, string message)
+                ChatString sender, ChatString message)
             {
                 _config = configuration;
                 ChatType = xivType;
@@ -246,8 +245,8 @@ public sealed class ChatLogManager : IDisposable
 
             public XivChatType ChatType { get; init; }
             public uint SenderId { get; init; }
-            public string Sender { get; init; }
-            public string Message { get; init; }
+            public ChatString Sender { get; init; }
+            public ChatString Message { get; init; }
 
 
             /// <summary>
@@ -279,35 +278,17 @@ public sealed class ChatLogManager : IDisposable
                 get { return _cleanedMessage ??= CleanUpMessage(Message); }
             }
 
-            private string CleanUpSender(string sender)
+            private string CleanUpSender(ChatString sender)
             {
-                var cleanedSender = sender;
-                if (!_config.IncludeServer)
-                {
-                    var index = sender.LastIndexOf('@');
-                    if (index != -1) cleanedSender = cleanedSender.Remove(index);
-                }
-
-                return _config.Users.GetValueOrDefault(cleanedSender, cleanedSender);
+                var cleanedSender = sender.AsText(_config);
+                var result = _config.Users.GetValueOrDefault(cleanedSender, cleanedSender);
+                if (result.IsNullOrWhitespace()) result = cleanedSender;
+                return result;
             }
 
-            private string CleanUpMessage(string message)
+            private string CleanUpMessage(ChatString message)
             {
-                var cleanedMessage = message;
-                if (!_config.IncludeServer)
-                    foreach (var server in DataCenter.Servers)
-                    {
-                        var startIndex = 0;
-                        while (true)
-                        {
-                            var index = cleanedMessage.IndexOf(server, startIndex, StringComparison.InvariantCulture);
-                            if (index == -1) break;
-                            cleanedMessage = cleanedMessage.Insert(index, "@");
-                            startIndex = index + server.Length + 1;
-                        }
-                    }
-
-                return cleanedMessage;
+                return message.AsText(_config);
             }
         }
     }

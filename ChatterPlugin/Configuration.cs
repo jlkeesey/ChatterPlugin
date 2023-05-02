@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ChatterPlugin.Localization;
 using Dalamud.Configuration;
 using Dalamud.Game.Text;
 

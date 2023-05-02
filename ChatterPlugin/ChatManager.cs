@@ -1,7 +1,11 @@
 using System;
+using System.Collections.Generic;
+using System.Reflection;
 using ChatterPlugin.Model;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Dalamud.Logging;
 
 namespace ChatterPlugin;
 
@@ -10,10 +14,53 @@ namespace ChatterPlugin;
 /// </summary>
 public sealed class ChatManager : IDisposable
 {
-    private readonly ChatLogManager _logManager;
-
-    public ChatManager(ChatLogManager logManager)
+    /// <summary>
+    /// Lists of all of the chat types that we support. Not all of these are currently exposed to the user.
+    /// </summary>
+    public static readonly List<XivChatType> AllSupportedChatTypes = new()
     {
+        XivChatType.Alliance,
+        XivChatType.CrossLinkShell1,
+        XivChatType.CrossLinkShell2,
+        XivChatType.CrossLinkShell3,
+        XivChatType.CrossLinkShell4,
+        XivChatType.CrossLinkShell5,
+        XivChatType.CrossLinkShell6,
+        XivChatType.CrossLinkShell7,
+        XivChatType.CrossLinkShell8,
+        XivChatType.CrossParty,
+        XivChatType.CustomEmote,
+        XivChatType.Echo,
+        XivChatType.FreeCompany,
+        XivChatType.Ls1,
+        XivChatType.Ls2,
+        XivChatType.Ls3,
+        XivChatType.Ls4,
+        XivChatType.Ls5,
+        XivChatType.Ls6,
+        XivChatType.Ls7,
+        XivChatType.Ls8,
+        XivChatType.Notice,
+        XivChatType.NoviceNetwork,
+        XivChatType.Party,
+        XivChatType.PvPTeam,
+        XivChatType.Say,
+        XivChatType.Shout,
+        XivChatType.StandardEmote,
+        XivChatType.SystemError,
+        XivChatType.SystemMessage,
+        XivChatType.TellIncoming,
+        XivChatType.TellOutgoing,
+        XivChatType.Urgent,
+        XivChatType.Yell,
+    };
+
+    private readonly ChatLogManager _logManager;
+    private readonly Configuration _configuration;
+
+    public ChatManager(Configuration configuration, ChatLogManager logManager)
+    {
+        _configuration = configuration;
         _logManager = logManager;
         Dalamud.Chat.ChatMessage += HandleChatMessage;
     }
@@ -43,8 +90,18 @@ public sealed class ChatManager : IDisposable
     private void HandleChatMessage(
         XivChatType xivType, uint senderId, ref SeString seSender, ref SeString seMessage, ref bool isHandled)
     {
-        var sender = CleanUpSender(seSender);
+        if (!AllSupportedChatTypes.Contains(xivType))
+        {
+            if (_configuration.IsDebug)
+            {
+                PluginLog.Log($"Unsupported XivChatType: {xivType}");
+            }
+            return;
+        }
+        PluginLog.Log($"@@@@ ===========================================================");
+        PluginLog.Log($"@@@@@ type = {ChatTypeHelper.TypeToName(xivType)}({(int) xivType})");
         var message = CleanUpMessage(seMessage);
+        var sender = CleanUpSender(seSender, message);
         _logManager.LogInfo(xivType, senderId, sender, message);
     }
 
@@ -53,42 +110,36 @@ public sealed class ChatManager : IDisposable
     /// </summary>
     /// <param name="seMessage">The message to clean.</param>
     /// <returns>The cleaned message.</returns>
-    private static string CleanUpMessage(SeString seMessage)
+    private ChatString CleanUpMessage(SeString seMessage)
     {
-        var message = seMessage.TextValue;
-        foreach (var server in DataCenter.Servers)
-        {
-            var startIndex = 0;
-            while (true)
-            {
-                var index = message.IndexOf(server, startIndex, StringComparison.InvariantCulture);
-                if (index == -1) break;
-                message = message.Insert(index, "@");
-                startIndex = index + server.Length + 1;
-            }
-        }
-
-        return message;
+        var chatString = new ChatString(seMessage);
+        PluginLog.Log($@"@@@@@ message CS: '{chatString.AsText(_configuration.ChatLogs[Configuration.AllLogName])}'");
+        return chatString;
     }
+
 
     /// <summary>
     ///     Cleans up the sender name. This removed any non-name characters and separated the world name from the user name by
     ///     an at sign (@).
     /// </summary>
+    /// <remarks>
+    /// From the FFXIV help pages: names are no more than 20 characters long, have 2 parts (first and last name), each part's length
+    /// is between 2 and 15 characters long. So we can use this information to help correct the world issue but reduce the number of
+    /// false adjustments. If we try to remove the world name and the remaining name does not meet the requirements, we know that
+    /// the world name is actually part of the user's name.
+    /// </remarks>
     /// <param name="seSender">The sender name.</param>
+    /// <param name="message"></param>
     /// <returns>The cleaned sender name.</returns>
-    private static string CleanUpSender(SeString seSender)
+    private ChatString CleanUpSender(SeString seSender, ChatString message)
     {
-        var sender = seSender.TextValue;
-        while (sender.Length > 0 && !char.IsLetter(sender[0])) sender = sender[1..];
-        while (sender.Length > 0 && !char.IsLetter(sender[^1])) sender = sender[..^1];
-        foreach (var server in DataCenter.Servers)
-            if (sender.EndsWith(server))
-            {
-                sender = sender.Insert(sender.Length - server.Length, "@");
-                break;
-            }
+        var chatString = new ChatString(seSender);
+        if (!chatString.HasInitialPlayer() && message.HasInitialPlayer())
+        {
+            chatString = new ChatString(message.GetInitialPlayerItem(chatString.ToString()!, null));
+        }
 
-        return sender;
+        PluginLog.Log($@"@@@@@  sender CS: '{chatString.AsText(_configuration.ChatLogs[Configuration.AllLogName])}'");
+        return chatString;
     }
 }

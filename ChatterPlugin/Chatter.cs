@@ -35,7 +35,7 @@ public sealed partial class Chatter : IDalamudPlugin
             WindowSystem = new WindowSystem(Name);
 
             ChatLogManager = new ChatLogManager();
-            ChatManager = new ChatManager(ChatLogManager);
+            ChatManager = new ChatManager(Configuration, ChatLogManager);
 
             ChatterImage = Dalamud.PluginInterface.UiBuilder.LoadImage(Resources.chatter);
 
