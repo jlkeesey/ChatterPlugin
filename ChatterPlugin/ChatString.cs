@@ -225,8 +225,6 @@ public class ChatString
             foreach (var ch in Text)
                 switch (ch)
                 {
-                    case '\u2665':
-
                     case '\uE040':
                         sb.Append('[');
                         break;
