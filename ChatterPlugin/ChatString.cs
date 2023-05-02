@@ -88,9 +88,6 @@ public class ChatString
                     str = str.Trim();
                     if (!str.IsNullOrWhitespace()) _items.Add(new CsTextItem(str));
                     break;
-                default:
-                    var payType = payload.GetType();
-                    break;
             }
         }
     }
@@ -148,8 +145,20 @@ public class ChatString
     /// </summary>
     private enum NameState
     {
+        /// <summary>
+        ///     Normal state, not doing any special processing.
+        /// </summary>
         Nothing,
+
+        /// <summary>
+        ///     We've seen a <see cref="PlayerPayload" /> which means we are waiting for the textual version of the name in the
+        ///     stream so we can remove it.
+        /// </summary>
         LookingForName,
+
+        /// <summary>
+        ///     We've seen the player name in the stream so wea now looking for the world name to appear if it does.
+        /// </summary>
         LookingForWorld
     }
 
@@ -201,6 +210,14 @@ public class ChatString
     /// </summary>
     private class CsTextItem : CsItem
     {
+        private static readonly Dictionary<char, string> SpecialCharacterMap = new()
+        {
+            {'\uE040', "["},
+            {'\uE041', "]"},
+            {'\uE033', "@"},
+            {'\uE0BB', ">>"}
+        };
+
         public CsTextItem(string text)
         {
             Text = text;
@@ -210,7 +227,29 @@ public class ChatString
 
         public override string ToString()
         {
-            return Text;
+            var sb = new StringBuilder();
+            foreach (var ch in Text)
+                /*
+                 * The Unicode block from U+E000..U+F8FF is a private user area where applications can install their
+                 * own characters. FFXIV does use this area for special characters. As such none of these characters
+                 * will display properly in any situation other than inside of FFXIV. We provide "translations" for
+                 * some of the more common ones here into something that is defined in Unicode.
+                 */
+                if (ch is >= '\uE000' and <= '\uF8FF')
+                {
+                    if (SpecialCharacterMap.TryGetValue(ch, out var value))
+                        sb.Append(value);
+#if DEBUG
+                    else
+                        PluginLog.Log($"Unknown FFXIV character: ({(int) ch})");
+#endif
+                }
+                else
+                {
+                    sb.Append(ch);
+                }
+
+            return sb.ToString();
         }
 
         /// <summary>
@@ -221,28 +260,7 @@ public class ChatString
         /// <returns>The <c>string</c> value of this item.</returns>
         public override string AsText(ChatLogConfiguration config)
         {
-            var sb = new StringBuilder();
-            foreach (var ch in Text)
-                switch (ch)
-                {
-                    case '\uE040':
-                        sb.Append('[');
-                        break;
-                    case '\uE041':
-                        sb.Append(']');
-                        break;
-                    default:
-#if DEBUG
-                        if ( ch is >= '\uE000' and <= '\uE400')
-                        {
-                            PluginLog.Log($"Unknown FFXIV character: ({(int)ch})");
-                        }
-#endif
-                        sb.Append(ch);
-                        break;
-                }
-
-            return sb.ToString();
+            return ToString();
         }
     }
 }

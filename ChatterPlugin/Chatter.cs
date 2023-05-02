@@ -9,12 +9,9 @@ using ImGuiScene;
 namespace ChatterPlugin;
 
 // TODO Fix file name name/date vs date/name
-// TODO only open file when written to.
 // TODO NodaTime?
 // TODO Fix tell in vs out
-// TODO Fix Simi Faerie
 // TODO Fix output format
-// TODO fix tell
 
 public sealed partial class Chatter : IDalamudPlugin
 {
