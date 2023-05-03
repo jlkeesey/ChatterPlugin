@@ -22,7 +22,7 @@ public sealed partial class Chatter
 
     private readonly Dictionary<string, Func<bool>> _debugFlags = new()
     {
-        {"debug", () => Configuration.IsDebug}
+        {"debug", () => Configuration.IsDebug},
     };
 
     /// <summary>
@@ -33,13 +33,13 @@ public sealed partial class Chatter
         _commands[CommandChatter] = new CommandInfo(OnChatterConfig)
         {
             HelpMessage = "Opens the Chatter configuration window.",
-            ShowInHelp = true
+            ShowInHelp = true,
         };
 
         _commands[CommandDebug] = new CommandInfo(OnChatterDebug)
         {
             HelpMessage = "Executes debug commands",
-            ShowInHelp = false
+            ShowInHelp = false,
         };
 
         foreach (var (command, info) in _commands) Dalamud.Commands.AddHandler(command, info);

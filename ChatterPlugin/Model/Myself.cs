@@ -23,4 +23,9 @@ public class Myself
     {
         get { return _homeWorld ??= Dalamud.ClientState.LocalPlayer?.HomeWorld.GameData?.Name ?? "Where am I?"; }
     }
+
+    /// <summary>
+    ///     Returns my full name (name plus home world).
+    /// </summary>
+    public static string FullName => $"{Name}@{HomeWorld}";
 }

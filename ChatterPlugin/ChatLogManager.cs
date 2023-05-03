@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using ChatterPlugin.Model;
 using Dalamud.Game.Text;
 using Dalamud.Logging;
 using Dalamud.Utility;
@@ -24,6 +25,7 @@ public sealed class ChatLogManager : IDisposable
     private string _logDirectory = string.Empty;
     private string _logFileNamePrefix = string.Empty;
     private DateTime _logStartTime = DateTime.Now;
+    private Configuration.FileNameOrder _logOrder = Configuration.FileNameOrder.None;
 
     public void Dispose()
     {
@@ -35,7 +37,7 @@ public sealed class ChatLogManager : IDisposable
     /// </summary>
     /// <param name="cfg">The configuration to use for this log.</param>
     /// <returns>The <see cref="ChatLog" /></returns>
-    public ChatLog GetLog(Configuration.ChatLogConfiguration cfg)
+    private ChatLog GetLog(Configuration.ChatLogConfiguration cfg)
     {
         UpdateConfigValues();
         if (!_logs.ContainsKey(cfg.Name))
@@ -53,10 +55,12 @@ public sealed class ChatLogManager : IDisposable
     private void UpdateConfigValues()
     {
         if (Chatter.Configuration.LogDirectory == _logDirectory &&
-            Chatter.Configuration.LogFileNamePrefix == _logFileNamePrefix) return;
+            Chatter.Configuration.LogFileNamePrefix == _logFileNamePrefix &&
+            Chatter.Configuration.LogOrder == _logOrder) return;
         CloseLogs();
         _logDirectory = Chatter.Configuration.LogDirectory;
         _logFileNamePrefix = Chatter.Configuration.LogFileNamePrefix;
+        _logOrder = Chatter.Configuration.LogOrder;
         _logStartTime = DateTime.Now;
     }
 
@@ -111,7 +115,7 @@ public sealed class ChatLogManager : IDisposable
         /// <summary>
         ///     The name of the log file if this log is open.
         /// </summary>
-        public string FileName { get; private set; } = string.Empty;
+        private string FileName { get; set; } = string.Empty;
 
         /// <summary>
         ///     The <see cref="StreamWriter" /> that we are writing to.
@@ -121,12 +125,14 @@ public sealed class ChatLogManager : IDisposable
         /// <summary>
         ///     The default format string for this log.
         /// </summary>
-        public abstract string DefaultFormat { get; }
+        protected abstract string DefaultFormat { get; }
+
+        protected abstract int DefaultWrapIndentation { get; }
 
         /// <summary>
         ///     Returns true if this log is open.
         /// </summary>
-        public bool IsOpen => Log != StreamWriter.Null;
+        private bool IsOpen => Log != StreamWriter.Null;
 
         public void Dispose()
         {
@@ -170,10 +176,48 @@ public sealed class ChatLogManager : IDisposable
         /// <param name="chatMessage">The chat message information.</param>
         protected void WriteLog(ChatMessage chatMessage)
         {
+            var messagesParts = WrapMessage(chatMessage.CleanedMessage);
             var format = Config.Format ?? DefaultFormat;
-            var logText = string.Format(format, chatMessage.TypeLabel, chatMessage.ShortTypeLabel, chatMessage.Sender,
-                chatMessage.CleanedSender, chatMessage.Message, chatMessage.CleanedMessage);
+            var logText = string.Format(format, chatMessage.TypeLabel, chatMessage.ShortTypeLabel,
+                chatMessage.Sender,
+                chatMessage.CleanedSender, $"{chatMessage.CleanedSender} [{chatMessage.ShortTypeLabel}]",
+                messagesParts[0]);
             WriteLine(logText);
+            var padding = "".PadLeft(Config.MessageWrapIndentation);
+            for (var i = 1; i < messagesParts.Count; i++)
+            {
+                WriteLine($"{padding}{messagesParts[i]}");
+            }
+        }
+
+        private List<string> WrapMessage(string message)
+        {
+            if (Config.MessageWrapWidth < 1) return new List<string>() {message};
+            var lines = new List<string>();
+            while (message.Length > Config.MessageWrapWidth)
+            {
+                var index = FindBreakPoint(message, Config.MessageWrapWidth);
+                var first = message[..index].Trim();
+                lines.Add(first);
+                message = message[index..].Trim();
+            }
+
+            if (message.Length > 0)
+            {
+                lines.Add(message);
+            }
+            return lines;
+        }
+
+        private static int FindBreakPoint(string message, int width)
+        {
+            if (message.Length < width) return message.Length - 1;
+            for (var i = width - 1; i >= 0; i--)
+            {
+                if (message[i] == ' ') return i;
+            }
+
+            return width - 1; // If there are no spaces we have to force a break
         }
 
         /// <summary>
@@ -190,17 +234,22 @@ public sealed class ChatLogManager : IDisposable
         /// <summary>
         ///     Opens this log if it is not already open. A new filename may be created if config values have changed.
         /// </summary>
-        public void Open()
+        private void Open()
         {
             if (IsOpen) return;
-            FileName =
-                FileHelper.FullFileNameWithDateTime(_manager._logDirectory,
-                    $"{_manager._logFileNamePrefix}-{Config.Name}",
-                    FileHelper.LogFileExtension,
-                    _manager._logStartTime);
+            var date = string.Format(FileDateTimePattern, _manager._logStartTime);
+            var pattern = Chatter.Configuration.LogOrder == Configuration.FileNameOrder.PrefixGroupDate
+                ? "{0}-{1}-{2}"
+                : "{0}-{2}-{1}";
+            var name = string.Format(pattern, _manager._logFileNamePrefix, Config.Name, date);
+            PluginLog.Log($"@@@@ File name '{name}'");
+            FileName = FileHelper.FullFileName(_manager._logDirectory, name, FileHelper.LogFileExtension);
+            PluginLog.Log($"@@@@ Full file name '{FileName}'");
             FileHelper.EnsureDirectoryExists(_manager._logDirectory);
             Log = new StreamWriter(FileName, true);
         }
+
+        private const string FileDateTimePattern = "{0:yyyyMMdd-HHmmss}";
 
         /// <summary>
         ///     Closes this log if open.
@@ -243,10 +292,10 @@ public sealed class ChatLogManager : IDisposable
                 Message = message;
             }
 
-            public XivChatType ChatType { get; init; }
-            public uint SenderId { get; init; }
-            public ChatString Sender { get; init; }
-            public ChatString Message { get; init; }
+            public XivChatType ChatType { get; }
+            public uint SenderId { get; }
+            public ChatString Sender { get; }
+            private ChatString Message { get; }
 
 
             /// <summary>
@@ -296,32 +345,36 @@ public sealed class ChatLogManager : IDisposable
     /// <summary>
     ///     Chat log for group based logs.
     /// </summary>
-    public class GroupChatLog : ChatLog
+    private class GroupChatLog : ChatLog
     {
         public GroupChatLog(ChatLogManager chatLogManager, Configuration.ChatLogConfiguration configuration) : base(
             chatLogManager, configuration)
         {
         }
 
-        public override string DefaultFormat => "{3}   {5}";
+        protected override string DefaultFormat => "{4,-30} {5}";
+        protected override int DefaultWrapIndentation => 30;
 
         protected override bool ShouldLog(ChatMessage chatMessage)
         {
-            return base.ShouldLog(chatMessage) &&
-                   (Config.IncludeMe || Config.Users.ContainsKey(chatMessage.CleanedSender));
+            if (!base.ShouldLog(chatMessage)) return false;
+            if (Config.IncludeAllUsers) return true;
+            if (Config.Users.ContainsKey(chatMessage.CleanedSender)) return true;
+            return Config.IncludeMe && chatMessage.CleanedSender == Myself.FullName;
         }
     }
 
     /// <summary>
     ///     Chat log for the log that record everything.
     /// </summary>
-    public class AllChatLog : ChatLog
+    private class AllChatLog : ChatLog
     {
         public AllChatLog(ChatLogManager chatLogManager, Configuration.ChatLogConfiguration configuration) : base(
             chatLogManager, configuration)
         {
         }
 
-        public override string DefaultFormat => "{0}:{2}:{4}";
+        protected override string DefaultFormat => "{0}:{2}:{5}";
+        protected override int DefaultWrapIndentation => 4;
     }
 }

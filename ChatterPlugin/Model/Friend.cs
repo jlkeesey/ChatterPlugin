@@ -52,7 +52,7 @@ public class Friend : IComparable<Friend>, IComparable
     }
 
     /// <summary>
-    ///     This friend's full name which is the <see cref="Name"/> and <see cref="HomeWorld"/> combined.
+    ///     This friend's full name which is the <see cref="Name" /> and <see cref="HomeWorld" /> combined.
     /// </summary>
     public string FullName => $"{Name}@{HomeWorld.Name}";
 

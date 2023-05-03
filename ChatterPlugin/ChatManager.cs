@@ -1,10 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
-using ChatterPlugin.Model;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Logging;
 
 namespace ChatterPlugin;
@@ -15,9 +12,9 @@ namespace ChatterPlugin;
 public sealed class ChatManager : IDisposable
 {
     /// <summary>
-    /// Lists of all of the chat types that we support. Not all of these are currently exposed to the user.
+    ///     Lists of all of the chat types that we support. Not all of these are currently exposed to the user.
     /// </summary>
-    public static readonly List<XivChatType> AllSupportedChatTypes = new()
+    private static readonly List<XivChatType> AllSupportedChatTypes = new()
     {
         XivChatType.Alliance,
         XivChatType.CrossLinkShell1,
@@ -55,8 +52,9 @@ public sealed class ChatManager : IDisposable
         XivChatType.Yell,
     };
 
-    private readonly ChatLogManager _logManager;
     private readonly Configuration _configuration;
+
+    private readonly ChatLogManager _logManager;
 
     public ChatManager(Configuration configuration, ChatLogManager logManager)
     {
@@ -92,14 +90,10 @@ public sealed class ChatManager : IDisposable
     {
         if (!AllSupportedChatTypes.Contains(xivType))
         {
-            if (_configuration.IsDebug)
-            {
-                PluginLog.Log($"Unsupported XivChatType: {xivType}");
-            }
+            if (_configuration.IsDebug) PluginLog.Debug($"Unsupported XivChatType: {xivType}");
             return;
         }
-        PluginLog.Log($"@@@@ ===========================================================");
-        PluginLog.Log($"@@@@@ type = {ChatTypeHelper.TypeToName(xivType)}({(int) xivType})");
+
         var message = CleanUpMessage(seMessage);
         var sender = CleanUpSender(seSender, message);
         _logManager.LogInfo(xivType, senderId, sender, message);
@@ -110,11 +104,9 @@ public sealed class ChatManager : IDisposable
     /// </summary>
     /// <param name="seMessage">The message to clean.</param>
     /// <returns>The cleaned message.</returns>
-    private ChatString CleanUpMessage(SeString seMessage)
+    private static ChatString CleanUpMessage(SeString seMessage)
     {
-        var chatString = new ChatString(seMessage);
-        PluginLog.Log($@"@@@@@ message CS: '{chatString.AsText(_configuration.ChatLogs[Configuration.AllLogName])}'");
-        return chatString;
+        return new ChatString(seMessage);
     }
 
 
@@ -123,23 +115,23 @@ public sealed class ChatManager : IDisposable
     ///     an at sign (@).
     /// </summary>
     /// <remarks>
-    /// From the FFXIV help pages: names are no more than 20 characters long, have 2 parts (first and last name), each part's length
-    /// is between 2 and 15 characters long. So we can use this information to help correct the world issue but reduce the number of
-    /// false adjustments. If we try to remove the world name and the remaining name does not meet the requirements, we know that
-    /// the world name is actually part of the user's name.
+    ///     From the FFXIV help pages: names are no more than 20 characters long, have 2 parts (first and last name), each
+    ///     part's length
+    ///     is between 2 and 15 characters long. So we can use this information to help correct the world issue but reduce the
+    ///     number of
+    ///     false adjustments. If we try to remove the world name and the remaining name does not meet the requirements, we
+    ///     know that
+    ///     the world name is actually part of the user's name.
     /// </remarks>
     /// <param name="seSender">The sender name.</param>
     /// <param name="message"></param>
     /// <returns>The cleaned sender name.</returns>
-    private ChatString CleanUpSender(SeString seSender, ChatString message)
+    private static ChatString CleanUpSender(SeString seSender, ChatString message)
     {
         var chatString = new ChatString(seSender);
         if (!chatString.HasInitialPlayer() && message.HasInitialPlayer())
-        {
-            chatString = new ChatString(message.GetInitialPlayerItem(chatString.ToString()!, null));
-        }
+            chatString = new ChatString(message.GetInitialPlayerItem(chatString.ToString(), null));
 
-        PluginLog.Log($@"@@@@@  sender CS: '{chatString.AsText(_configuration.ChatLogs[Configuration.AllLogName])}'");
         return chatString;
     }
 }

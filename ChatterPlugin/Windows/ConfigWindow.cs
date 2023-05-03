@@ -32,11 +32,17 @@ public sealed partial class ConfigWindow : Window, IDisposable
         {XivChatType.Say, Loc.Message("ChatType.Say"), Loc.Message("ChatType.Say.Help")},
         {XivChatType.Yell, Loc.Message("ChatType.Yell"), Loc.Message("ChatType.Yell.Help")},
         {XivChatType.Shout, Loc.Message("ChatType.Shout"), Loc.Message("ChatType.Shout.Help")},
-        {XivChatType.TellIncoming, Loc.Message("ChatType.Tell"), Loc.Message("ChatType.Tell.Help")},
+        {
+            XivChatType.TellIncoming, Loc.Message("ChatType.Tell"), Loc.Message("ChatType.Tell.Help"),
+            config => config.SyncFlags()
+        },
         {XivChatType.Party, Loc.Message("ChatType.Party"), Loc.Message("ChatType.Party.Help")},
         {XivChatType.FreeCompany, Loc.Message("ChatType.FreeCompany"), Loc.Message("ChatType.FreeCompany.Help")},
         {XivChatType.Alliance, Loc.Message("ChatType.Alliance"), Loc.Message("ChatType.Alliance.Help")},
-        {XivChatType.StandardEmote, Loc.Message("ChatType.Emote"), Loc.Message("ChatType.Emote.Help")}
+        {
+            XivChatType.StandardEmote, Loc.Message("ChatType.Emote"), Loc.Message("ChatType.Emote.Help"),
+            config => config.SyncFlags()
+        },
     };
 
     /// <summary>
@@ -51,7 +57,7 @@ public sealed partial class ConfigWindow : Window, IDisposable
         {XivChatType.Ls5, Loc.Message("ChatType.Ls5"), Loc.Message("ChatType.Ls5.Help")},
         {XivChatType.Ls6, Loc.Message("ChatType.Ls6"), Loc.Message("ChatType.Ls6.Help")},
         {XivChatType.Ls7, Loc.Message("ChatType.Ls7"), Loc.Message("ChatType.Ls7.Help")},
-        {XivChatType.Ls8, Loc.Message("ChatType.Ls8"), Loc.Message("ChatType.Ls8.Help")}
+        {XivChatType.Ls8, Loc.Message("ChatType.Ls8"), Loc.Message("ChatType.Ls8.Help")},
     };
 
     /// <summary>
@@ -66,7 +72,7 @@ public sealed partial class ConfigWindow : Window, IDisposable
         {XivChatType.CrossLinkShell5, Loc.Message("ChatType.Cwls5"), Loc.Message("ChatType.Cwls5.Help")},
         {XivChatType.CrossLinkShell6, Loc.Message("ChatType.Cwls6"), Loc.Message("ChatType.Cwls6.Help")},
         {XivChatType.CrossLinkShell7, Loc.Message("ChatType.Cwls7"), Loc.Message("ChatType.Cwls7.Help")},
-        {XivChatType.CrossLinkShell8, Loc.Message("ChatType.Cwls8"), Loc.Message("ChatType.Cwls8.Help")}
+        {XivChatType.CrossLinkShell8, Loc.Message("ChatType.Cwls8"), Loc.Message("ChatType.Cwls8.Help")},
     };
 
     /// <summary>
@@ -80,11 +86,12 @@ public sealed partial class ConfigWindow : Window, IDisposable
         {XivChatType.PvPTeam, Loc.Message("ChatType.PvPTeam"), Loc.Message("ChatType.PvPTeam.Help")},
         {XivChatType.Echo, Loc.Message("ChatType.Echo"), Loc.Message("ChatType.Echo.Help")},
         {XivChatType.SystemError, Loc.Message("ChatType.SystemError"), Loc.Message("ChatType.SystemError.Help")},
-        {XivChatType.SystemMessage, Loc.Message("ChatType.SystemMessage"), Loc.Message("ChatType.SystemMessage.Help")}
+        {XivChatType.SystemMessage, Loc.Message("ChatType.SystemMessage"), Loc.Message("ChatType.SystemMessage.Help")},
     };
 
-    private readonly TextureWrap? _chatterImage;
+    private static readonly string[] LogOrderLabels = {"Group then date", "Date then group",};
 
+    private readonly TextureWrap? _chatterImage;
 
     private readonly Configuration _configuration;
     private bool _addUserAlreadyExists;
@@ -93,9 +100,10 @@ public sealed partial class ConfigWindow : Window, IDisposable
     private IEnumerable<Friend> _filteredFriends = new List<Friend>();
     private string _friendFilter = Empty;
     private IEnumerable<Friend> _friends = new List<Friend>();
+    private int _logOrderSelected;
     private bool _removeDialogIsOpen = true;
     private string _removeDialogUser = Empty;
-    private string _removeUserName = Empty;
+    private string _removeUser = Empty;
     private string _selectedFriend = Empty;
     private string _selectedGroup = Configuration.AllLogName;
 
@@ -109,7 +117,7 @@ public sealed partial class ConfigWindow : Window, IDisposable
         SizeConstraints = new WindowSizeConstraints
         {
             MinimumSize = new Vector2(450, 520),
-            MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
+            MaximumSize = new Vector2(float.MaxValue, float.MaxValue),
         };
 
         Size = new Vector2(800, 520);
@@ -164,6 +172,13 @@ public sealed partial class ConfigWindow : Window, IDisposable
 
         LongInputField(MsgLabelSaveDirectory, ref _configuration.LogDirectory, 1024, "##saveDirectory",
             MsgLabelSaveDirectoryHelp);
+
+        VerticalSpace();
+
+        if (ImGui.Combo("Log file order", ref _logOrderSelected, LogOrderLabels, LogOrderLabels.Length))
+            _configuration.LogOrder = _logOrderSelected == 0
+                ? Configuration.FileNameOrder.PrefixGroupDate
+                : Configuration.FileNameOrder.PrefixDateGroup;
     }
 
     /// <summary>
@@ -203,6 +218,16 @@ public sealed partial class ConfigWindow : Window, IDisposable
             DrawCheckbox(MsgLabelIncludeServerName, ref chatLog.IncludeServer, MsgLabelIncludeServerNameHelp);
             ImGui.TableNextColumn();
             DrawCheckbox(MsgLabelIncludeSelf, ref chatLog.IncludeMe, MsgLabelIncludeSelfHelp);
+
+            ImGui.TableNextColumn();
+            ImGui.InputInt("Wrap Width", ref chatLog.MessageWrapWidth);
+            HelpMarker(
+                "The maximum width of each line of the message. Lines longer than this will be wrapped. Set to 0 to not wrap.");
+
+            ImGui.TableNextColumn();
+            ImGui.InputInt("Wrap Indent", ref chatLog.MessageWrapIndentation);
+            HelpMarker(
+                "The indentation for each wrapped message line. Be sure to account for an spaces between fields. Set to 0 to have no indentation.");
 #if DEBUG
             ImGui.TableNextColumn();
             DrawCheckbox(MsgLabelIncludeAll, ref chatLog.DebugIncludeAllMessages, MsgLabelIncludeAllHelp);
@@ -265,10 +290,10 @@ public sealed partial class ConfigWindow : Window, IDisposable
             }
         }
 
-        if (_removeUserName != Empty)
+        if (_removeUser != Empty)
         {
-            chatLog.Users.Remove(_removeUserName);
-            _removeUserName = Empty;
+            chatLog.Users.Remove(_removeUser);
+            _removeUser = Empty;
         }
 
         if (ImGui.CollapsingHeader(MsgHeaderIncludedChatTypes))
@@ -334,7 +359,6 @@ public sealed partial class ConfigWindow : Window, IDisposable
                 var fullName = _addUserFullName.Trim();
                 if (!fullName.IsNullOrWhitespace())
                 {
-                    if (!fullName.Contains('@')) fullName = $"{fullName}@{Myself.HomeWorld}";
                     var replacement = _addUserReplacementName.Trim();
                     if (chatLog.Users.TryAdd(fullName, replacement))
                         ImGui.CloseCurrentPopup();
@@ -450,7 +474,7 @@ public sealed partial class ConfigWindow : Window, IDisposable
 
             if (ImGui.Button(MsgButtonRemove, new Vector2(120, 0)))
             {
-                _removeUserName = _removeDialogUser;
+                _removeUser = _removeDialogUser;
                 ImGui.CloseCurrentPopup();
             }
 
@@ -517,8 +541,8 @@ public sealed partial class ConfigWindow : Window, IDisposable
         if (ImGui.BeginTable(id, 4))
         {
             foreach (var flag in flagList)
-                if (flags.TryGetValue(flag.Item1, out var flagValue))
-                    DrawFlag(flag.Item2, ref flagValue.Value, flag.Item3);
+                if (flags.TryGetValue(flag.Type, out var flagValue))
+                    DrawFlag(flag, chatLog, ref flagValue.Value);
 
             ImGui.EndTable();
         }
@@ -529,14 +553,16 @@ public sealed partial class ConfigWindow : Window, IDisposable
     /// <summary>
     ///     Draws a single chat flag item.
     /// </summary>
-    /// <param name="label">The label for the flag.</param>
+    /// <param name="info">The display information about this flag.</param>
+    /// <param name="chatLog">The configuration this flag is from.</param>
     /// <param name="flag">The flag value location.</param>
-    /// <param name="helpText">Optional help description for this chat type.</param>
-    private static void DrawFlag(string label, ref bool flag, string? helpText = null)
+    private static void DrawFlag(ChatTypeFlagInfo info, Configuration.ChatLogConfiguration chatLog,
+        ref bool flag)
     {
         ImGui.TableNextColumn();
-        ImGui.Checkbox(label, ref flag);
-        HelpMarker(helpText);
+        if (ImGui.Checkbox(info.Label, ref flag)) info.OnChange?.Invoke(chatLog);
+
+        HelpMarker(info.Help);
     }
 
     /// <summary>
@@ -567,7 +593,10 @@ public sealed partial class ConfigWindow : Window, IDisposable
     /// <summary>
     ///     Adds a help button that shows the given help text when hovered over.
     /// </summary>
-    /// <param name="description">The description to show. If this is <c>null</c>, empty, or all whitespace, nothing is created.</param>
+    /// <param name="description">
+    ///     The description to show. If this is <c>null</c>, empty, or all whitespace, nothing is
+    ///     created.
+    /// </param>
     /// <param name="sameLine"><c>true</c> if this should be on the same line as the previous item.</param>
     private static void HelpMarker(string? description, bool sameLine = true)
     {
@@ -600,13 +629,34 @@ public sealed partial class ConfigWindow : Window, IDisposable
     }
 
     /// <summary>
+    ///     Defines the display information for a chat type flag.
+    /// </summary>
+    private class ChatTypeFlagInfo
+    {
+        public ChatTypeFlagInfo(XivChatType type, string label, string? help = null,
+            Action<Configuration.ChatLogConfiguration>? onChange = null)
+        {
+            Type = type;
+            Label = label;
+            Help = help;
+            OnChange = onChange;
+        }
+
+        public XivChatType Type { get; }
+        public string Label { get; }
+        public string? Help { get; }
+        public Action<Configuration.ChatLogConfiguration>? OnChange { get; }
+    }
+
+    /// <summary>
     ///     Helper type to make creating a list of tuples easier.
     /// </summary>
-    private class ChatTypeFlagList : List<Tuple<XivChatType, string, string?>>
+    private class ChatTypeFlagList : List<ChatTypeFlagInfo>
     {
-        public void Add(XivChatType item, string item2, string? item3 = null)
+        public void Add(XivChatType type, string label, string? help = null,
+            Action<Configuration.ChatLogConfiguration>? onChange = null)
         {
-            Add(new Tuple<XivChatType, string, string?>(item, item2, item3));
+            Add(new ChatTypeFlagInfo(type, label, help, onChange));
         }
     }
 }

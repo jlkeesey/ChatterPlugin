@@ -142,7 +142,7 @@ internal class FileHelper
     /// <param name="prefix">The file name prefix.</param>
     /// <param name="when">The timestamp for the file name or null for the current time.</param>
     /// <returns>The complete file name.</returns>
-    public static string FileNameWithDateTime(string prefix, DateTime? when = null)
+    private static string FileNameWithDateTime(string prefix, DateTime? when = null)
     {
         return prefix + string.Format(FileDateTimePattern, when ?? DateTime.Now);
     }
@@ -156,17 +156,14 @@ internal class FileHelper
     ///     created.
     /// </remarks>
     /// <param name="directory">The directory for the file.</param>
-    /// <param name="prefix">The file name prefix.</param>
+    /// <param name="name">The name component of the full file name.</param>
     /// <param name="extension">The extension for the file.</param>
-    /// <param name="when">The timestamp for the file name or null for the current time.</param>
     /// <returns>A non-existing file name.</returns>
     /// <exception cref="IndexOutOfRangeException">
     ///     If the counter overflows. The counter is an int so more than 2G file name must exist for this to trigger.
     /// </exception>
-    public static string FullFileNameWithDateTime(
-        string directory, string prefix, string extension, DateTime? when = null)
+    public static string FullFileName(string directory, string name, string extension)
     {
-        var name = FileNameWithDateTime(prefix, when);
         var fullName = MakeName(directory, name, extension);
         if (!Path.Exists(fullName)) return fullName;
         for (var i = 0; i < int.MaxValue; i++)
@@ -186,7 +183,7 @@ internal class FileHelper
     /// <param name="name">The name of the file.</param>
     /// <param name="extension">The extension of the file.</param>
     /// <returns>The combined file name.</returns>
-    public static string MakeName(string directory, string name, string extension)
+    private static string MakeName(string directory, string name, string extension)
     {
         return Path.ChangeExtension(Path.Join(directory, name), extension);
     }

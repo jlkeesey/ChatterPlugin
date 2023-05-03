@@ -2,8 +2,8 @@
   "Author": "James Keesey",
   "Name": "Chatter Plugin",
   "Punchline": "Saves and filters chats.",
-  "Description": "Saves and filters chats.",
-  "InternalName": "chatterPlugin",
+  "Description": "Allows for saving char conversations, separated by groups of people and chat types.",
+  "InternalName": "ChatterPlugin",
   "RepoUrl": "https://github.com/jlkeesey/ChatterPlugin",
   "ApplicableVersion": "any",
   "Tags": [

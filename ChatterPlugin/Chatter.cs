@@ -8,10 +8,8 @@ using ImGuiScene;
 
 namespace ChatterPlugin;
 
-// TODO Fix file name name/date vs date/name
 // TODO NodaTime?
 // TODO Fix tell in vs out
-// TODO Fix output format
 
 public sealed partial class Chatter : IDalamudPlugin
 {
@@ -53,14 +51,15 @@ public sealed partial class Chatter : IDalamudPlugin
     public static Configuration Configuration { get; private set; }
 #pragma warning restore CS8618
 
-    public TextureWrap? ChatterImage { get; init; }
-    public ChatManager ChatManager { get; }
-    public ChatLogManager ChatLogManager { get; }
+    public TextureWrap? ChatterImage { get; }
+    private ChatManager ChatManager { get; }
+    private ChatLogManager ChatLogManager { get; }
     public WindowSystem WindowSystem { get; private set; }
     public string Name => "ChatterPlugin";
 
     public void Dispose()
     {
+        // ReSharper disable ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
         Configuration?.Save(); // Should be auto-saved but let's be sure
 
         UnregisterCommands();
@@ -68,5 +67,6 @@ public sealed partial class Chatter : IDalamudPlugin
         ChatLogManager?.Dispose();
         ChatManager?.Dispose();
         _windowManager?.Dispose();
+        // ReSharper restore ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
     }
 }

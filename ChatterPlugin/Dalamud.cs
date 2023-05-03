@@ -10,14 +10,14 @@ using Dalamud.Plugin;
 namespace ChatterPlugin;
 
 /// <summary>
-/// Global access to all of the Dalamud services that we use.
+///     Global access to all of the Dalamud services that we use.
 /// </summary>
 public class Dalamud
 {
     /// <summary>
-    /// Initializes this object by telling the Dalamud plugin interface to do injection.
+    ///     Initializes this object by telling the Dalamud plugin interface to do injection.
     /// </summary>
-    /// <param name="pluginInterface">The <see cref="DalamudPluginInterface"/> to use for injection.</param>
+    /// <param name="pluginInterface">The <see cref="DalamudPluginInterface" /> to use for injection.</param>
     public static void Initialize(DalamudPluginInterface pluginInterface)
     {
         pluginInterface.Create<Dalamud>();
