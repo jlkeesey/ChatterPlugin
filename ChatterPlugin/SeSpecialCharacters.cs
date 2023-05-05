@@ -20,50 +20,78 @@ public static class SeSpecialCharacters
     ///     well-defined Unicode characters.
     /// </summary>
     private static readonly Dictionary<char, string> SpecialCharacterMap = new()
-    { // : 10 - 
-        {'\uE03C', "\u2747"},
-        {'\uE06D', "\u33C2"},
-        {'\uE06E', "\u33D8"},
-        {'\uE040', "["},
-        {'\uE041', "]"},
-        {'\uE05D', "\u273F"},
-        {'\uE071', "\u24B6"},
-        {'\uE072', "\u24B7"},
-        {'\uE073', "\u24B8"},
-        {'\uE074', "\u24B9"},
-        {'\uE075', "\u24BA"},
-        {'\uE076', "\u24BB"},
-        {'\uE077', "\u24BC"},
-        {'\uE078', "\u24BD"},
-        {'\uE079', "\u24BE"},
-        {'\uE07A', "\u24BF"},
-        {'\uE07B', "\u24C0"},
-        {'\uE07C', "\u24C1"},
-        {'\uE07D', "\u24C2"},
-        {'\uE07E', "\u24C3"},
-        {'\uE07F', "\u24C4"},
-        {'\uE080', "\u24C5"},
-        {'\uE081', "\u24C6"},
-        {'\uE082', "\u24C7"},
-        {'\uE083', "\u24C8"},
-        {'\uE084', "\u24C9"},
-        {'\uE085', "\u24CA"},
-        {'\uE086', "\u24CB"},
-        {'\uE087', "\u24CC"},
-        {'\uE088', "\u24CD"},
-        {'\uE089', "\u24CE"},
-        {'\uE08A', "\u24CF"},
-        {'\uE090', "\u2460"},
-        {'\uE091', "\u2461"},
-        {'\uE092', "\u2462"},
-        {'\uE093', "\u2463"},
-        {'\uE094', "\u2464"},
-        {'\uE095', "\u2465"},
-        {'\uE096', "\u2466"},
-        {'\uE097', "\u2467"},
-        {'\uE098', "\u2468"},
-        {'\uE099', "\u2469"},
-        {'\uE0BB', "\u02A2"},
+    {
+        {'\uE03C', "\u2747"}, // Flower separator between names and worlds
+        {'\uE040', "["}, // Open double arrow used to surround translatable words
+        {'\uE041', "]"}, // Close double arrow used to surround translatable words
+        {'\uE049', "\u25CB"}, // D-controller circle button
+        {'\uE04A', "\u25FB"}, // D-controller square button
+        {'\uE04B', "\u2716"}, // D-controller x button
+        {'\uE04C', "\u2795"}, // D-controller triangle button
+        {'\uE04D', "\u25B3"}, // D-controller + button
+        {'\uE05D', "\u273F"}, // Flower
+        {'\uE06D', "\u33C2"}, // AM
+        {'\uE06E', "\u33D8"}, // PM
+        {'\uE071', "\u24B6"}, // Letter A
+        {'\uE072', "\u24B7"}, // Letter B
+        {'\uE073', "\u24B8"}, // Letter C
+        {'\uE074', "\u24B9"}, // Letter D
+        {'\uE075', "\u24BA"}, // Letter E
+        {'\uE076', "\u24BB"}, // Letter F
+        {'\uE077', "\u24BC"}, // Letter G
+        {'\uE078', "\u24BD"}, // Letter H
+        {'\uE079', "\u24BE"}, // Letter I
+        {'\uE07A', "\u24BF"}, // Letter J
+        {'\uE07B', "\u24C0"}, // Letter K
+        {'\uE07C', "\u24C1"}, // Letter L
+        {'\uE07D', "\u24C2"}, // Letter M
+        {'\uE07E', "\u24C3"}, // Letter N
+        {'\uE07F', "\u24C4"}, // Letter O
+        {'\uE080', "\u24C5"}, // Letter P
+        {'\uE081', "\u24C6"}, // Letter Q
+        {'\uE082', "\u24C7"}, // Letter R
+        {'\uE083', "\u24C8"}, // Letter S
+        {'\uE084', "\u24C9"}, // Letter T
+        {'\uE085', "\u24CA"}, // Letter U
+        {'\uE086', "\u24CB"}, // Letter V
+        {'\uE087', "\u24CC"}, // Letter W
+        {'\uE088', "\u24CD"}, // Letter X
+        {'\uE089', "\u24CE"}, // Letter Y
+        {'\uE08A', "\u24CF"}, // Letter Z
+        {'\uE08F', "\u24EA"}, // Number 0
+        {'\uE090', "\u2460"}, // Number 1
+        {'\uE091', "\u2461"}, // Number 2
+        {'\uE092', "\u2462"}, // Number 3
+        {'\uE093', "\u2463"}, // Number 4
+        {'\uE094', "\u2464"}, // Number 5
+        {'\uE095', "\u2465"}, // Number 6
+        {'\uE096', "\u2466"}, // Number 7
+        {'\uE097', "\u2467"}, // Number 8
+        {'\uE098', "\u2468"}, // Number 9
+        {'\uE099', "\u2469"}, // Number 10
+        {'\uE09A', "\u246A"}, // Number 11
+        {'\uE09B', "\u246B"}, // Number 12
+        {'\uE09C', "\u246C"}, // Number 13
+        {'\uE09D', "\u246D"}, // Number 14
+        {'\uE09E', "\u246E"}, // Number 15
+        {'\uE09F', "\u246F"}, // Number 16
+        {'\uE0A0', "\u2470"}, // Number 17
+        {'\uE0A1', "\u2471"}, // Number 18
+        {'\uE0A2', "\u2472"}, // Number 19
+        {'\uE0A3', "\u2473"}, // Number 20
+        {'\uE0AF', "\u2A01"}, // Plus in filled square
+        {'\uE0BB', "\u02A2"}, // Filled arrow in front of links
+        {'\uE0BC', "\u233D"}, // Swoop in square
+        {'\uE0BD', "\u29F3"}, // Swoop in filled square
+        {'\uE0BE', "\u2B07"}, // Down arrow in filled square
+        {'\uE0BF', "\u274E"}, // X in filled square rotated
+        {'\uE0C1', "\u2160"}, // Roman numeral I
+        {'\uE0C1', "\u272A"}, // Star in filled square
+        {'\uE0C2', "\u2161"}, // Roman numeral II
+        {'\uE0C3', "\u2162"}, // Roman numeral III
+        {'\uE0C4', "\u2163"}, // Roman numeral IV
+        {'\uE0C5', "\u2164"}, // Roman numeral V
+        {'\uE0C6', "\u2165"}, // Roman numeral VI
     };
 
     public static bool IsSpecial(char ch)

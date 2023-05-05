@@ -65,11 +65,19 @@ public partial class Configuration : IPluginConfiguration
 
     public int Version { get; set; } = 1;
 
+    /// <summary>
+    /// Adds a log configuration.
+    /// </summary>
+    /// <param name="logConfiguration">The <see cref="ChatLogConfiguration"/> to add.</param>
     public void AddLog(ChatLogConfiguration logConfiguration)
     {
         ChatLogs[logConfiguration.Name] = logConfiguration;
     }
 
+    /// <summary>
+    /// Removes a log configuration.
+    /// </summary>
+    /// <param name="logConfiguration">The <see cref="ChatLogConfiguration"/> to remove.</param>
     public void RemoveLog(ChatLogConfiguration logConfiguration)
     {
         ChatLogs.Remove(logConfiguration.Name);
@@ -94,7 +102,7 @@ public partial class Configuration : IPluginConfiguration
         if (Dalamud.PluginInterface.GetPluginConfig() is not Configuration config) config = new Configuration();
 
         if (!config.ChatLogs.ContainsKey(AllLogName))
-            config.AddLog(new ChatLogConfiguration(AllLogName, true, includeAllUsers: true));
+            config.AddLog(new ChatLogConfiguration(AllLogName, true, includeAllUsers: true, format: "{2}:{0}:{5}"));
 
 #if DEBUG
         // ReSharper disable StringLiteralTypo

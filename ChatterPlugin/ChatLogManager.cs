@@ -339,6 +339,6 @@ public sealed class ChatLogManager : IDisposable
         {
         }
 
-        protected override string DefaultFormat => "{0}:{2}:{5}";
+        protected override string DefaultFormat => "{2}:{0}:{5}";
     }
 }

@@ -484,6 +484,86 @@
       "key": "Text.RemoveUser",
       "message": "Do you want to remove {0} from this log?",
       "description": ""
+    },
+    {
+      "key": "Combo.Order.GroupDate",
+      "message": "Group then date",
+      "description": ""
+    },
+    {
+      "key": "Combo.Order.GroupDate.Help",
+      "message": "The log file names will be in the format: ''prefix-groupname-20230414-123456.log''. The operating system will sort the group file together.",
+      "description": ""
+    },
+    {
+      "key": "Combo.Order.DateGroup",
+      "message": "Date then group",
+      "description": ""
+    },
+    {
+      "key": "Combo.Order.DateGroup.Help",
+      "message": "The log file names will be in the format: ''prefix-20230414-123456-groupname.log''. The operating system will sort the logs from the same time together.",
+      "description": ""
+    },
+    {
+      "key": "Combo.Timestamp.Cultural",
+      "message": "Cultural",
+      "description": ""
+    },
+    {
+      "key": "Combo.Timestamp.Sortable",
+      "message": "Sortable",
+      "description": ""
+    },
+    {
+      "key": "Combo.Timestamp.Cultural,Help",
+      "message": "Formats the timestamp in a way that is reasonable for the region you are in. This uses the default region settings of this computer. For example, this will look like: '5/4/2023 9:37:54 PM' in the US and '4/5/2023 21:37:54' in The Netherlands.'",
+      "description": ""
+    },
+    {
+      "key": "Combo.Timestamp.Sortable.Help",
+      "message": "Formats the timestamp in a way that allows for easy sorting, and is consistent across regions. It will still use this computer's time zone to format the timestamp. Timestamps will look like: 2023-05-04 16:25:38",
+      "description": ""
+    },
+    {
+      "key": "Combo.Order.Label",
+      "message": "Log file order",
+      "description": ""
+    },
+    {
+      "key": "Combo.Order.Help",
+      "message": "Specifies the order of the parts of the log file name.",
+      "description": ""
+    },
+    {
+      "key": "Combo.Timestamp.Label",
+      "message": "Time format",
+      "description": ""
+    },
+    {
+      "key": "Combo.Timestamp.Help",
+      "message": "Which format to use for timestamps.",
+      "description": ""
+    },
+    {
+      "key": "Input.WrapWidth.Label",
+      "message": "Wrap Width",
+      "description": ""
+    },
+    {
+      "key": "Input.WrapWidth.Help",
+      "message": "The maximum width of each line of the message. Lines longer than this will be wrapped. Set to 0 to not wrap.",
+      "description": ""
+    },
+    {
+      "key": "Input.WrapIndent.Label",
+      "message": "Wrap Indent",
+      "description": ""
+    },
+    {
+      "key": "Input.WrapIndent.Help",
+      "message": "The indentation for each wrapped message line. Be sure to account for an spaces between fields. Set to 0 to have no indentation. Set to -1 to have the indentation calculated.",
+      "description": ""
     }
   ]
 }

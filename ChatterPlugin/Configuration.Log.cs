@@ -18,14 +18,6 @@ public partial class Configuration
         /// </summary>
         public readonly Dictionary<XivChatType, ChatTypeFlag> ChatTypeFilterFlags = new();
 
-        public static readonly List<DateOption> DateOptions = new()
-        {
-            new DateOption("Cultural", "G",
-                "Formats the timestamp in a way that is reasonable for the region you are in. This uses the default region settings of this computer. For example, this will look like: '5/4/2023 9:37:54 PM' in the US and '4/5/2023 21:37:54' in The Netherlands.'"),
-            new DateOption("Sortable", "yyyy-MM-dd HH:mm:ss",
-                "Formats the timestamp in a way that allows for easy sorting, and is consistent across regions. It will still use this computer's time zone to format the timestamp. Timestamps will look like: 2023-05-04 16:25:38"),
-        };
-
         /// <summary>
         ///     The format string for formatting the timestamp of a chat message. If not specified, we use "G".
         /// </summary>
@@ -175,21 +167,6 @@ public partial class Configuration
             ChatTypeFilterFlags.Clear(); // TODO remove this once setup is working
             foreach (var type in DefaultEnabledTypes)
                 ChatTypeFilterFlags.TryAdd(type, new ChatTypeFlag(true));
-        }
-
-        public class DateOption
-        {
-            public string Format;
-            public string? Help;
-
-            public string Label;
-
-            public DateOption(string label, string format, string? help = null)
-            {
-                Label = label;
-                Format = format;
-                Help = help;
-            }
         }
 
         public class ChatTypeFlag

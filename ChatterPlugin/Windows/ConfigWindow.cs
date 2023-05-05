@@ -12,6 +12,8 @@ using Dalamud.Utility;
 using ImGuiNET;
 using ImGuiScene;
 using static System.String;
+using static ChatterPlugin.Configuration;
+using static ChatterPlugin.Configuration.FileNameOrder;
 
 // ReSharper disable InvertIf
 
@@ -89,25 +91,24 @@ public sealed partial class ConfigWindow : Window, IDisposable
         {XivChatType.SystemMessage, Loc.Message("ChatType.SystemMessage"), Loc.Message("ChatType.SystemMessage.Help")},
     };
 
-    private static readonly string[] LogOrderLabels = {"Group then date", "Date then group",};
-    private static readonly string[] TimeStampFormats = {"Cultural", "Sortable",};
-    private static int _timeStampSelected;
-
+    private static int _timeStampSelected = -1;
     private readonly TextureWrap? _chatterImage;
-
     private readonly Configuration _configuration;
+
+    private readonly List<ComboOption<string>> _dateOptions;
+    private readonly List<ComboOption<FileNameOrder>> _fileOrderOptions;
     private bool _addUserAlreadyExists;
     private string _addUserFullName = Empty;
     private string _addUserReplacementName = Empty;
     private IEnumerable<Friend> _filteredFriends = new List<Friend>();
     private string _friendFilter = Empty;
     private IEnumerable<Friend> _friends = new List<Friend>();
-    private int _logOrderSelected;
+    private int _logOrderSelected = -1;
     private bool _removeDialogIsOpen = true;
     private string _removeDialogUser = Empty;
     private string _removeUser = Empty;
     private string _selectedFriend = Empty;
-    private string _selectedGroup = Configuration.AllLogName;
+    private string _selectedGroup = AllLogName;
 
     /// <summary>
     ///     Constructs the configuration editing window.
@@ -126,6 +127,18 @@ public sealed partial class ConfigWindow : Window, IDisposable
         SizeCondition = ImGuiCond.FirstUseEver;
 
         _configuration = Chatter.Configuration;
+
+        _dateOptions = new List<ComboOption<string>>
+        {
+            new(MsgComboTimestampCultural, "G", MsgComboTimestampCulturalHelp),
+            new(MsgComboTimestampSortable, "yyyy-MM-dd HH:mm:ss", MsgComboTimestampSortableHelp),
+        };
+
+        _fileOrderOptions = new List<ComboOption<FileNameOrder>>
+        {
+            new(MsgComboOrderGroupDate, PrefixGroupDate, MsgComboOrderGroupDateHelp),
+            new(MsgComboOrderDateGroup, PrefixGroupDate, MsgComboOrderDateGroupHelp),
+        };
     }
 
     public void Dispose()
@@ -177,10 +190,39 @@ public sealed partial class ConfigWindow : Window, IDisposable
 
         VerticalSpace();
 
-        if (ImGui.Combo("Log file order", ref _logOrderSelected, LogOrderLabels, LogOrderLabels.Length))
-            _configuration.LogOrder = _logOrderSelected == 0
-                ? Configuration.FileNameOrder.PrefixGroupDate
-                : Configuration.FileNameOrder.PrefixDateGroup;
+        if (_logOrderSelected < 0)
+        {
+            _logOrderSelected = 0; // Default in case we don't find it
+            for (var i = 0; i < _fileOrderOptions.Count; i++)
+                if (_fileOrderOptions[i].Value == _configuration.LogOrder)
+                {
+                    _logOrderSelected = i;
+                    break;
+                }
+        }
+
+        ImGui.SetNextItemWidth(200.0f);
+        if (ImGui.BeginCombo(MsgComboOrderLabel, _fileOrderOptions[_logOrderSelected].Label))
+        {
+            for (var i = 0; i < _fileOrderOptions.Count; i++)
+            {
+                var isSelected = i == _logOrderSelected;
+                if (ImGui.Selectable(_fileOrderOptions[i].Label, isSelected))
+                {
+                    _logOrderSelected = i;
+                    _configuration.LogOrder = _fileOrderOptions[i].Value;
+                }
+
+                if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+                    DrawTooltip(_fileOrderOptions[i].Help);
+                if (isSelected)
+                    ImGui.SetItemDefaultFocus();
+            }
+
+            ImGui.EndCombo();
+        }
+
+        HelpMarker(MsgComboOrderHelp);
     }
 
     /// <summary>
@@ -212,10 +254,10 @@ public sealed partial class ConfigWindow : Window, IDisposable
         {
             ImGui.TableNextColumn();
             DrawCheckbox(MsgLabelIsActive, ref chatLog.IsActive, MsgLabelIsActiveHelp,
-                chatLog.Name == Configuration.AllLogName);
+                chatLog.Name == AllLogName);
             ImGui.TableNextColumn();
             DrawCheckbox(MsgLabelIncludeAllUsers, ref chatLog.IncludeAllUsers, MsgLabelIncludeAllUsersHelp,
-                chatLog.Name == Configuration.AllLogName);
+                chatLog.Name == AllLogName);
             ImGui.TableNextColumn();
             DrawCheckbox(MsgLabelIncludeServerName, ref chatLog.IncludeServer, MsgLabelIncludeServerNameHelp);
             ImGui.TableNextColumn();
@@ -229,53 +271,47 @@ public sealed partial class ConfigWindow : Window, IDisposable
         }
 
         VerticalSpace();
-        
-        ImGui.PushItemWidth(150.0f);
-        ImGui.InputInt("Wrap Width", ref chatLog.MessageWrapWidth);
-        HelpMarker(
-            "The maximum width of each line of the message. Lines longer than this will be wrapped. Set to 0 to not wrap.");
 
-        ImGui.InputInt("Wrap Indent", ref chatLog.MessageWrapIndentation);
-        HelpMarker(
-            "The indentation for each wrapped message line. Be sure to account for an spaces between fields. Set to 0 to have no indentation. Set to -1 to have the indentation calculated.");
+        ImGui.PushItemWidth(150.0f);
+        ImGui.InputInt(MsgInputWrapWidthLabel, ref chatLog.MessageWrapWidth);
+        HelpMarker(MsgInputWrapWidthHelp);
+
+        ImGui.InputInt(MsgInputWrapIndentLabel, ref chatLog.MessageWrapIndentation);
+        HelpMarker(MsgInputWrapIndentHelp);
 
         if (_timeStampSelected < 0)
         {
             _timeStampSelected = 0; // Default in case we don't find it
-            for (var i = 0; i < Configuration.ChatLogConfiguration.DateOptions.Count; i++)
-            {
-                if (Configuration.ChatLogConfiguration.DateOptions[i].Format == chatLog.Format)
-                {
-                    _timeStampSelected = i; break;
-                }
-            }
-        }
-        if (ImGui.BeginCombo("Time Format", Configuration.ChatLogConfiguration.DateOptions[_timeStampSelected].Label))
-        {
-            for (var i = 0; i < Configuration.ChatLogConfiguration.DateOptions.Count; i++)
-            {
-                var isSelected = i == _timeStampSelected;
-                if (ImGui.Selectable(Configuration.ChatLogConfiguration.DateOptions[i].Label, isSelected))
+            for (var i = 0; i < _dateOptions.Count; i++)
+                if (_dateOptions[i].Value == chatLog.Format)
                 {
                     _timeStampSelected = i;
-                    chatLog.DateTimeFormat = Configuration.ChatLogConfiguration.DateOptions[i].Format;
+                    break;
+                }
+        }
+
+        if (ImGui.BeginCombo(MsgComboTimestampLabel, _dateOptions[_timeStampSelected].Label))
+        {
+            for (var i = 0; i < _dateOptions.Count; i++)
+            {
+                var isSelected = i == _timeStampSelected;
+                if (ImGui.Selectable(_dateOptions[i].Label, isSelected))
+                {
+                    _timeStampSelected = i;
+                    chatLog.DateTimeFormat = _dateOptions[i].Value;
                 }
 
                 if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-                    DrawTooltip(Configuration.ChatLogConfiguration.DateOptions[i].Help);
-                if (isSelected) 
+                    DrawTooltip(_dateOptions[i].Help);
+                if (isSelected)
                     ImGui.SetItemDefaultFocus();
             }
 
             ImGui.EndCombo();
         }
-        HelpMarker("Which format to use for timestamps.");
 
-        // if (ImGui.Combo("Time format", ref _timeStampSelected, TimeStampFormats, TimeStampFormats.Length))
-        //     chatLog.DateTimeFormat = _timeStampSelected == 0
-        //         ? Configuration.ChatLogConfiguration.DateTimeFormatCultural
-        //         : Configuration.ChatLogConfiguration.DateTimeFormatSortable;
-        // HelpMarker("Which format to use for timestamps.");
+        HelpMarker(MsgComboTimestampHelp);
+
         ImGui.PopItemWidth();
 
         VerticalSpace();
@@ -364,7 +400,7 @@ public sealed partial class ConfigWindow : Window, IDisposable
     ///     Draws the popup to add a new user to the user list.
     /// </summary>
     /// <param name="chatLog">The chat log configuration to edit.</param>
-    private void DrawAddUserPopup(Configuration.ChatLogConfiguration chatLog)
+    private void DrawAddUserPopup(ChatLogConfiguration chatLog)
     {
         ImGui.SetNextWindowSizeConstraints(new Vector2(350.0f, 100.0f), new Vector2(350.0f, 200.0f));
         if (ImGui.BeginPopup("addUser", ImGuiWindowFlags.ChildWindow))
@@ -576,7 +612,7 @@ public sealed partial class ConfigWindow : Window, IDisposable
     /// <param name="id">The id for the list of items.</param>
     /// <param name="chatLog">The chat log configuration.</param>
     /// <param name="flagList">The list of flags to draw. If a flag is in the list but not set in the config it is ignored.</param>
-    private static void DrawChatTypeFlags(string id, Configuration.ChatLogConfiguration chatLog,
+    private static void DrawChatTypeFlags(string id, ChatLogConfiguration chatLog,
         ChatTypeFlagList flagList)
     {
         ImGui.Spacing();
@@ -599,7 +635,7 @@ public sealed partial class ConfigWindow : Window, IDisposable
     /// <param name="info">The display information about this flag.</param>
     /// <param name="chatLog">The configuration this flag is from.</param>
     /// <param name="flag">The flag value location.</param>
-    private static void DrawFlag(ChatTypeFlagInfo info, Configuration.ChatLogConfiguration chatLog,
+    private static void DrawFlag(ChatTypeFlagInfo info, ChatLogConfiguration chatLog,
         ref bool flag)
     {
         ImGui.TableNextColumn();
@@ -671,13 +707,27 @@ public sealed partial class ConfigWindow : Window, IDisposable
         ImGui.EndTooltip();
     }
 
+    public class ComboOption<T>
+    {
+        public readonly string? Help;
+        public readonly string Label;
+        public readonly T Value;
+
+        public ComboOption(string label, T value, string? help = null)
+        {
+            Label = label;
+            Value = value;
+            Help = help;
+        }
+    }
+
     /// <summary>
     ///     Defines the display information for a chat type flag.
     /// </summary>
     private class ChatTypeFlagInfo
     {
         public ChatTypeFlagInfo(XivChatType type, string label, string? help = null,
-            Action<Configuration.ChatLogConfiguration>? onChange = null)
+            Action<ChatLogConfiguration>? onChange = null)
         {
             Type = type;
             Label = label;
@@ -688,7 +738,7 @@ public sealed partial class ConfigWindow : Window, IDisposable
         public XivChatType Type { get; }
         public string Label { get; }
         public string? Help { get; }
-        public Action<Configuration.ChatLogConfiguration>? OnChange { get; }
+        public Action<ChatLogConfiguration>? OnChange { get; }
     }
 
     /// <summary>
@@ -697,7 +747,7 @@ public sealed partial class ConfigWindow : Window, IDisposable
     private class ChatTypeFlagList : List<ChatTypeFlagInfo>
     {
         public void Add(XivChatType type, string label, string? help = null,
-            Action<Configuration.ChatLogConfiguration>? onChange = null)
+            Action<ChatLogConfiguration>? onChange = null)
         {
             Add(new ChatTypeFlagInfo(type, label, help, onChange));
         }
