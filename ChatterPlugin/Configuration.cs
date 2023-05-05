@@ -109,7 +109,7 @@ public partial class Configuration : IPluginConfiguration
             },
         };
         config.AddLog(logConfiguration);
-        config.AddLog(new ChatLogConfiguration("Pups", true));
+        config.AddLog(new ChatLogConfiguration("Pups", true, wrapColumn: 60, wrapIndent: 54));
         config.AddLog(new ChatLogConfiguration("Goobtube"));
         // ReSharper restore StringLiteralTypo
 #endif

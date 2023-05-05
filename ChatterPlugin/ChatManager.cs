@@ -77,7 +77,7 @@ public sealed class ChatManager : IDisposable
     ///     The name of the sender. The will include the world name if the world is different from the user,
     ///     but the world will not be separated from the user name.
     /// </param>
-    /// <param name="seMessage">
+    /// <param name="seBody">
     ///     The chat message text. User names will include the world name is the world is different from the user,
     ///     but the world will not be separated from the user name.
     /// </param>
@@ -86,7 +86,7 @@ public sealed class ChatManager : IDisposable
     ///     passed on.
     /// </param>
     private void HandleChatMessage(
-        XivChatType xivType, uint senderId, ref SeString seSender, ref SeString seMessage, ref bool isHandled)
+        XivChatType xivType, uint senderId, ref SeString seSender, ref SeString seBody, ref bool isHandled)
     {
         if (!AllSupportedChatTypes.Contains(xivType))
         {
@@ -94,19 +94,20 @@ public sealed class ChatManager : IDisposable
             return;
         }
 
-        var message = CleanUpMessage(seMessage);
-        var sender = CleanUpSender(seSender, message);
-        _logManager.LogInfo(xivType, senderId, sender, message);
+        var body = CleanUpBody(seBody);
+        var sender = CleanUpSender(seSender, body);
+        var cm = new ChatMessage(xivType, senderId, sender, body);
+        _logManager.LogInfo(cm);
     }
 
     /// <summary>
     ///     Cleans up the chat message. The world names are separated from the user names by an at sign (@).
     /// </summary>
-    /// <param name="seMessage">The message to clean.</param>
+    /// <param name="seBody">The body text to clean.</param>
     /// <returns>The cleaned message.</returns>
-    private static ChatString CleanUpMessage(SeString seMessage)
+    private static ChatString CleanUpBody(SeString seBody)
     {
-        return new ChatString(seMessage);
+        return new ChatString(seBody);
     }
 
 
@@ -116,12 +117,9 @@ public sealed class ChatManager : IDisposable
     /// </summary>
     /// <remarks>
     ///     From the FFXIV help pages: names are no more than 20 characters long, have 2 parts (first and last name), each
-    ///     part's length
-    ///     is between 2 and 15 characters long. So we can use this information to help correct the world issue but reduce the
-    ///     number of
-    ///     false adjustments. If we try to remove the world name and the remaining name does not meet the requirements, we
-    ///     know that
-    ///     the world name is actually part of the user's name.
+    ///     part's length is between 2 and 15 characters long. So we can use this information to help correct the world issue
+    ///     but reduce the number of false adjustments. If we try to remove the world name and the remaining name does not meet
+    ///     the requirements, we know that the world name is actually part of the user's name.
     /// </remarks>
     /// <param name="seSender">The sender name.</param>
     /// <param name="message"></param>

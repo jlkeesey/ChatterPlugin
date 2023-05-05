@@ -8,8 +8,12 @@ using ImGuiScene;
 
 namespace ChatterPlugin;
 
+// TODO Add timestamp
 // TODO NodaTime?
 // TODO Fix tell in vs out
+// TODO When day changes (at midnight) add marker to log
+// TODO auto switch log files once a day
+// TODO Localize the new fields and help
 
 public sealed partial class Chatter : IDalamudPlugin
 {

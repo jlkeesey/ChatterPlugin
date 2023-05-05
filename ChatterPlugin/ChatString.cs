@@ -48,7 +48,6 @@ public class ChatString
             switch (payload)
             {
                 case PlayerPayload p:
-                    PluginLog.Log($"@@@@ name: '{p.PlayerName}'  disp: '{p.DisplayedName}'");
                     player = new CsPlayerItem(p.PlayerName, p.World.Name);
                     _items.Add(player);
                     nameState = NameState.LookingForName;
@@ -177,7 +176,7 @@ public class ChatString
     {
         public CsPlayerItem(string name, string world)
         {
-            Name = name;
+            Name = SeSpecialCharacters.Clean(name);
             World = world;
         }
 
@@ -201,98 +200,30 @@ public class ChatString
     }
 
     /// <summary>
-    ///     Represents a text sequence in the stream.
+    ///     Represents a text sequence in the stream. FFXIV special characters will be handled.
     /// </summary>
     private class CsTextItem : CsItem
     {
-        private static readonly Dictionary<char, string> SpecialCharacterMap = new()
-        {
-            {'\uE03C', "\u2747"},
-            {'\uE040', "["},
-            {'\uE041', "]"},
-            {'\uE05D', "@"},
-            {'\uE071', "\u24B6"},
-            {'\uE072', "\u24B7"},
-            {'\uE073', "\u24B8"},
-            {'\uE074', "\u24B9"},
-            {'\uE075', "\u24BA"},
-            {'\uE076', "\u24BB"},
-            {'\uE077', "\u24BC"},
-            {'\uE078', "\u24BD"},
-            {'\uE079', "\u24BE"},
-            {'\uE07A', "\u24BF"},
-            {'\uE07B', "\u24C0"},
-            {'\uE07C', "\u24C1"},
-            {'\uE07D', "\u24C2"},
-            {'\uE07E', "\u24C3"},
-            {'\uE07F', "\u24C4"},
-            {'\uE080', "\u24C5"},
-            {'\uE081', "\u24C6"},
-            {'\uE082', "\u24C7"},
-            {'\uE083', "\u24C8"},
-            {'\uE084', "\u24C9"},
-            {'\uE085', "\u24CA"},
-            {'\uE086', "\u24CB"},
-            {'\uE087', "\u24CC"},
-            {'\uE088', "\u24CD"},
-            {'\uE089', "\u24CE"},
-            {'\uE08A', "\u24CF"},
-            {'\uE090', "\u2460"},
-            {'\uE091', "\u2461"},
-            {'\uE092', "\u2462"},
-            {'\uE093', "\u2463"},
-            {'\uE094', "\u2464"},
-            {'\uE095', "\u2465"},
-            {'\uE096', "\u2466"},
-            {'\uE097', "\u2467"},
-            {'\uE098', "\u2468"},
-            {'\uE099', "\u2469"},
-            {'\uE0BB', ">>"},
-        };
-
         public CsTextItem(string text)
         {
-            Text = text;
+            Text = SeSpecialCharacters.Replace(text);
         }
 
         private string Text { get; }
 
         public override string ToString()
         {
-            var sb = new StringBuilder();
-            foreach (var ch in Text)
-                /*
-                 * The Unicode block from U+E000..U+F8FF is a private user area where applications can install their
-                 * own characters. FFXIV does use this area for special characters. As such none of these characters
-                 * will display properly in any situation other than inside of FFXIV. We provide "translations" for
-                 * some of the more common ones here into something that is defined in Unicode.
-                 */
-                if (ch is >= '\uE000' and <= '\uF8FF')
-                {
-                    if (SpecialCharacterMap.TryGetValue(ch, out var value))
-                        sb.Append(value);
-#if DEBUG
-                    else
-                        PluginLog.Debug("Unknown FFXIV character: (\\u{0:X4})", (int) ch);
-#endif
-                }
-                else
-                {
-                    sb.Append(ch);
-                }
-
-            return sb.ToString();
+            return Text;
         }
 
         /// <summary>
-        ///     Returns the value of this item as text for appending into a single string. Funky characters (the one in the
-        ///     FFXIV plane) are converted to a more friendly form.
+        ///     Returns the value of this item as text for appending into a single string.
         /// </summary>
         /// <param name="logConfig">The <see cref="ChatLogConfiguration" /> that controls the required output.</param>
         /// <returns>The <c>string</c> value of this item.</returns>
         public override string AsText(ChatLogConfiguration logConfig)
         {
-            return ToString();
+            return Text;
         }
     }
 }

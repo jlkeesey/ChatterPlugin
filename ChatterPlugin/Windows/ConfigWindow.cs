@@ -90,6 +90,8 @@ public sealed partial class ConfigWindow : Window, IDisposable
     };
 
     private static readonly string[] LogOrderLabels = {"Group then date", "Date then group",};
+    private static readonly string[] TimeStampFormats = {"Cultural", "Sortable",};
+    private static int _timeStampSelected;
 
     private readonly TextureWrap? _chatterImage;
 
@@ -219,15 +221,6 @@ public sealed partial class ConfigWindow : Window, IDisposable
             ImGui.TableNextColumn();
             DrawCheckbox(MsgLabelIncludeSelf, ref chatLog.IncludeMe, MsgLabelIncludeSelfHelp);
 
-            ImGui.TableNextColumn();
-            ImGui.InputInt("Wrap Width", ref chatLog.MessageWrapWidth);
-            HelpMarker(
-                "The maximum width of each line of the message. Lines longer than this will be wrapped. Set to 0 to not wrap.");
-
-            ImGui.TableNextColumn();
-            ImGui.InputInt("Wrap Indent", ref chatLog.MessageWrapIndentation);
-            HelpMarker(
-                "The indentation for each wrapped message line. Be sure to account for an spaces between fields. Set to 0 to have no indentation.");
 #if DEBUG
             ImGui.TableNextColumn();
             DrawCheckbox(MsgLabelIncludeAll, ref chatLog.DebugIncludeAllMessages, MsgLabelIncludeAllHelp);
@@ -235,7 +228,57 @@ public sealed partial class ConfigWindow : Window, IDisposable
             ImGui.EndTable();
         }
 
-        ImGui.Spacing();
+        VerticalSpace();
+        
+        ImGui.PushItemWidth(150.0f);
+        ImGui.InputInt("Wrap Width", ref chatLog.MessageWrapWidth);
+        HelpMarker(
+            "The maximum width of each line of the message. Lines longer than this will be wrapped. Set to 0 to not wrap.");
+
+        ImGui.InputInt("Wrap Indent", ref chatLog.MessageWrapIndentation);
+        HelpMarker(
+            "The indentation for each wrapped message line. Be sure to account for an spaces between fields. Set to 0 to have no indentation. Set to -1 to have the indentation calculated.");
+
+        if (_timeStampSelected < 0)
+        {
+            _timeStampSelected = 0; // Default in case we don't find it
+            for (var i = 0; i < Configuration.ChatLogConfiguration.DateOptions.Count; i++)
+            {
+                if (Configuration.ChatLogConfiguration.DateOptions[i].Format == chatLog.Format)
+                {
+                    _timeStampSelected = i; break;
+                }
+            }
+        }
+        if (ImGui.BeginCombo("Time Format", Configuration.ChatLogConfiguration.DateOptions[_timeStampSelected].Label))
+        {
+            for (var i = 0; i < Configuration.ChatLogConfiguration.DateOptions.Count; i++)
+            {
+                var isSelected = i == _timeStampSelected;
+                if (ImGui.Selectable(Configuration.ChatLogConfiguration.DateOptions[i].Label, isSelected))
+                {
+                    _timeStampSelected = i;
+                    chatLog.DateTimeFormat = Configuration.ChatLogConfiguration.DateOptions[i].Format;
+                }
+
+                if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+                    DrawTooltip(Configuration.ChatLogConfiguration.DateOptions[i].Help);
+                if (isSelected) 
+                    ImGui.SetItemDefaultFocus();
+            }
+
+            ImGui.EndCombo();
+        }
+        HelpMarker("Which format to use for timestamps.");
+
+        // if (ImGui.Combo("Time format", ref _timeStampSelected, TimeStampFormats, TimeStampFormats.Length))
+        //     chatLog.DateTimeFormat = _timeStampSelected == 0
+        //         ? Configuration.ChatLogConfiguration.DateTimeFormatCultural
+        //         : Configuration.ChatLogConfiguration.DateTimeFormatSortable;
+        // HelpMarker("Which format to use for timestamps.");
+        ImGui.PopItemWidth();
+
+        VerticalSpace();
 
         if (ImGui.CollapsingHeader(MsgHeaderIncludedUsers))
         {

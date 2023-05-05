@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using ChatterPlugin.Model;
-using Dalamud.Game.Text;
 using Dalamud.Logging;
 using Dalamud.Utility;
 
@@ -24,8 +23,8 @@ public sealed class ChatLogManager : IDisposable
 
     private string _logDirectory = string.Empty;
     private string _logFileNamePrefix = string.Empty;
-    private DateTime _logStartTime = DateTime.Now;
     private Configuration.FileNameOrder _logOrder = Configuration.FileNameOrder.None;
+    private DateTime _logStartTime = DateTime.Now;
 
     public void Dispose()
     {
@@ -87,21 +86,19 @@ public sealed class ChatLogManager : IDisposable
     /// <summary>
     ///     Sends the chat info to all of the currently defined logs. Each log decides what to do with the information.
     /// </summary>
-    /// <param name="xivType">The chat type (say, tell, shout, etc.)</param>
-    /// <param name="senderId">The id of the sender.</param>
-    /// <param name="sender">The name of the sender. This may include a server name separated by and @ sign.</param>
-    /// <param name="message">The text of chat. User names in the message may include a server name separated by and @ sign.</param>
-    public void LogInfo(XivChatType xivType, uint senderId, ChatString sender, ChatString message)
+    /// <param name="chatMessage">The chat message information.</param>
+    public void LogInfo(ChatMessage chatMessage)
     {
         foreach (var (_, configurationChatLog) in Chatter.Configuration.ChatLogs)
-            GetLog(configurationChatLog).LogInfo(xivType, senderId, sender, message);
+            GetLog(configurationChatLog).LogInfo(chatMessage);
     }
 
     /// <summary>
     ///     Defines the handler for a single log file.
     /// </summary>
-    public abstract class ChatLog : IDisposable
+    private abstract class ChatLog : IDisposable
     {
+        private const string FileDateTimePattern = "{0:yyyyMMdd-HHmmss}";
         private static readonly Configuration.ChatLogConfiguration.ChatTypeFlag DefaultChatTypeFlag = new();
         private readonly ChatLogManager _manager;
         protected readonly Configuration.ChatLogConfiguration Config;
@@ -127,8 +124,6 @@ public sealed class ChatLogManager : IDisposable
         /// </summary>
         protected abstract string DefaultFormat { get; }
 
-        protected abstract int DefaultWrapIndentation { get; }
-
         /// <summary>
         ///     Returns true if this log is open.
         /// </summary>
@@ -144,8 +139,9 @@ public sealed class ChatLogManager : IDisposable
         ///     Determines if the give log information should be sent to the log output by examining the configuration.
         /// </summary>
         /// <param name="chatMessage">The chat message information.</param>
+        /// <param name="cleanedSender">The sender after processing based on the configuration.</param>
         /// <returns><c>true</c> if this message should be logged.</returns>
-        protected virtual bool ShouldLog(ChatMessage chatMessage)
+        protected virtual bool ShouldLog(ChatMessage chatMessage, string cleanedSender)
         {
             if (!Config.IsActive) return false;
             if (Config.DebugIncludeAllMessages) return true;
@@ -160,62 +156,105 @@ public sealed class ChatLogManager : IDisposable
         ///     The configuration defines whether the given message should be logged as well as what massaging of the data
         ///     is required.
         /// </remarks>
-        /// <param name="xivType">The chat type (say, tell, shout, etc.)</param>
-        /// <param name="senderId">The id of the sender.</param>
-        /// <param name="sender">The name of the sender. This may include a server name separated by and @ sign.</param>
-        /// <param name="message">The text of chat. User names in the message may include a server name separated by and @ sign.</param>
-        public void LogInfo(XivChatType xivType, uint senderId, ChatString sender, ChatString message)
+        /// <param name="chatMessage">The chat message information.</param>
+        public void LogInfo(ChatMessage chatMessage)
         {
-            var chatMessage = new ChatMessage(Config, xivType, senderId, sender, message);
-            if (ShouldLog(chatMessage)) WriteLog(chatMessage);
+            var cleanedSender = ReplaceSender(chatMessage);
+            var cleanedBody = chatMessage.Body.AsText(Config);
+            if (ShouldLog(chatMessage, cleanedSender))
+                WriteLog(chatMessage, cleanedSender, cleanedBody);
         }
 
         /// <summary>
         ///     Formats the chat message using this logs format string and sends it to the log output.
         /// </summary>
         /// <param name="chatMessage">The chat message information.</param>
-        protected void WriteLog(ChatMessage chatMessage)
+        /// <param name="cleanedSender">The sender after processing based on the configuration.</param>
+        /// <param name="cleanedBody">The body after processing based on the configuration.</param>
+        private void WriteLog(ChatMessage chatMessage, string cleanedSender, string cleanedBody)
         {
-            var messagesParts = WrapMessage(chatMessage.CleanedMessage);
+            var bodyParts = WrapBody(cleanedBody);
+            var whenString = chatMessage.When.ToString(Config.DateTimeFormat ?? "G");
             var format = Config.Format ?? DefaultFormat;
-            var logText = string.Format(format, chatMessage.TypeLabel, chatMessage.ShortTypeLabel,
-                chatMessage.Sender,
-                chatMessage.CleanedSender, $"{chatMessage.CleanedSender} [{chatMessage.ShortTypeLabel}]",
-                messagesParts[0]);
+            var logText = FormatMessage(chatMessage, cleanedSender, format, bodyParts[0], whenString);
             WriteLine(logText);
-            var padding = "".PadLeft(Config.MessageWrapIndentation);
-            for (var i = 1; i < messagesParts.Count; i++)
-            {
-                WriteLine($"{padding}{messagesParts[i]}");
-            }
+            var indentation = Config.MessageWrapIndentation >= 0
+                ? Config.MessageWrapIndentation
+                : logText.IndexOf(bodyParts[0], StringComparison.Ordinal);
+            var padding = "".PadLeft(indentation);
+            for (var i = 1; i < bodyParts.Count; i++) WriteLine($"{padding}{bodyParts[i]}");
         }
 
-        private List<string> WrapMessage(string message)
+        /// <summary>
+        ///     Formats a single message text line using the setup format string and all of the various pieces that can
+        ///     go into a message. The format will take what it wants.
+        /// </summary>
+        /// <param name="chatMessage">The chat message info.</param>
+        /// <param name="cleanedSender">The cleaned sender, possibly replaced.</param>
+        /// <param name="format">The format string.</param>
+        /// <param name="body">
+        ///     The first part of the body text.  If the body has been wrapped, this is the first lien, otherwise it
+        ///     is all of the body.
+        /// </param>
+        /// <param name="whenString">The formatted timestamp.</param>
+        /// <returns></returns>
+        private static string FormatMessage(ChatMessage chatMessage, string cleanedSender, string format, string body,
+            string whenString)
         {
-            if (Config.MessageWrapWidth < 1) return new List<string>() {message};
+            var logText = string.Format(format, chatMessage.TypeLabel, chatMessage.TypeLabel,
+                chatMessage.Sender,
+                cleanedSender, $"{cleanedSender} [{chatMessage.TypeLabel}]",
+                body, whenString);
+            return logText;
+        }
+
+        /// <summary>
+        ///     Replaces the sender if there is a replacement defined.
+        /// </summary>
+        /// <param name="chatMessage">The chat message information.</param>
+        /// <returns>The sender to use in the log.</returns>
+        private string ReplaceSender(ChatMessage chatMessage)
+        {
+            var cleanedSender = chatMessage.Sender.AsText(Config);
+            var result = Config.Users.GetValueOrDefault(chatMessage.Sender.ToString(), cleanedSender);
+            if (result.IsNullOrWhitespace()) result = cleanedSender;
+            return result;
+        }
+
+        /// <summary>
+        ///     Returns a list of all of the wrapped lines of the body.
+        /// </summary>
+        /// <param name="body">The body to wrap.</param>
+        /// <returns>The list of lines, there will always be at least 1 line.</returns>
+        private List<string> WrapBody(string body)
+        {
+            if (Config.MessageWrapWidth < 1) return new List<string> {body,};
             var lines = new List<string>();
-            while (message.Length > Config.MessageWrapWidth)
+            while (body.Length > Config.MessageWrapWidth)
             {
-                var index = FindBreakPoint(message, Config.MessageWrapWidth);
-                var first = message[..index].Trim();
+                var index = FindBreakPoint(body, Config.MessageWrapWidth);
+                var first = body[..index].Trim();
                 lines.Add(first);
-                message = message[index..].Trim();
+                body = body[index..].Trim();
             }
 
-            if (message.Length > 0)
-            {
-                lines.Add(message);
-            }
+            if (body.Length > 0) lines.Add(body);
             return lines;
         }
 
-        private static int FindBreakPoint(string message, int width)
+        /// <summary>
+        ///     Returns the next breakpoint in the body. This will be the last space character if there is one
+        ///     or forced at the wrap column if necessary.
+        /// </summary>
+        /// <param name="body">The body text to process.</param>
+        /// <param name="width">The wrap width.</param>
+        /// <returns>An index into body to break.</returns>
+        private static int FindBreakPoint(string body, int width)
         {
-            if (message.Length < width) return message.Length - 1;
+            if (body.Length < width) return body.Length - 1;
             for (var i = width - 1; i >= 0; i--)
-            {
-                if (message[i] == ' ') return i;
-            }
+                if (body[i] == ' ')
+                    return i;
 
             return width - 1; // If there are no spaces we have to force a break
         }
@@ -242,14 +281,10 @@ public sealed class ChatLogManager : IDisposable
                 ? "{0}-{1}-{2}"
                 : "{0}-{2}-{1}";
             var name = string.Format(pattern, _manager._logFileNamePrefix, Config.Name, date);
-            PluginLog.Log($"@@@@ File name '{name}'");
             FileName = FileHelper.FullFileName(_manager._logDirectory, name, FileHelper.LogFileExtension);
-            PluginLog.Log($"@@@@ Full file name '{FileName}'");
             FileHelper.EnsureDirectoryExists(_manager._logDirectory);
             Log = new StreamWriter(FileName, true);
         }
-
-        private const string FileDateTimePattern = "{0:yyyyMMdd-HHmmss}";
 
         /// <summary>
         ///     Closes this log if open.
@@ -271,75 +306,6 @@ public sealed class ChatLogManager : IDisposable
         {
             PluginLog.Log($"{Config.Name,-12}  {IsOpen,-5}  '{FileName}'");
         }
-
-        /// <summary>
-        ///     The information about a single chat message line.
-        /// </summary>
-        protected class ChatMessage
-        {
-            private readonly Configuration.ChatLogConfiguration _config;
-            private string? _cleanedMessage;
-            private string? _cleanedSender;
-            private string? _typeLabel;
-
-            public ChatMessage(Configuration.ChatLogConfiguration configuration, XivChatType xivType, uint senderId,
-                ChatString sender, ChatString message)
-            {
-                _config = configuration;
-                ChatType = xivType;
-                SenderId = senderId;
-                Sender = sender;
-                Message = message;
-            }
-
-            public XivChatType ChatType { get; }
-            public uint SenderId { get; }
-            public ChatString Sender { get; }
-            private ChatString Message { get; }
-
-
-            /// <summary>
-            ///     Returns the long version of the type label.
-            /// </summary>
-            public string TypeLabel
-            {
-                get { return _typeLabel ??= ChatTypeHelper.TypeToName(ChatType); }
-            }
-
-            /// <summary>
-            ///     Returns the short version of the type label, usually 1-3 characters.
-            /// </summary>
-            public string ShortTypeLabel => TypeLabel;
-
-            /// <summary>
-            ///     Returns the cleaned sender name. This includes removing the world name and doing any name replacements.
-            /// </summary>
-            public string CleanedSender
-            {
-                get { return _cleanedSender ??= CleanUpSender(Sender); }
-            }
-
-            /// <summary>
-            ///     Returns the cleaned version of the message text. Currently this merely removes worlds from names.
-            /// </summary>
-            public string CleanedMessage
-            {
-                get { return _cleanedMessage ??= CleanUpMessage(Message); }
-            }
-
-            private string CleanUpSender(ChatString sender)
-            {
-                var cleanedSender = sender.AsText(_config);
-                var result = _config.Users.GetValueOrDefault(cleanedSender, cleanedSender);
-                if (result.IsNullOrWhitespace()) result = cleanedSender;
-                return result;
-            }
-
-            private string CleanUpMessage(ChatString message)
-            {
-                return message.AsText(_config);
-            }
-        }
     }
 
     /// <summary>
@@ -352,15 +318,14 @@ public sealed class ChatLogManager : IDisposable
         {
         }
 
-        protected override string DefaultFormat => "{4,-30} {5}";
-        protected override int DefaultWrapIndentation => 30;
+        protected override string DefaultFormat => "{6,22} {4,-30} {5}";
 
-        protected override bool ShouldLog(ChatMessage chatMessage)
+        protected override bool ShouldLog(ChatMessage chatMessage, string cleanedSender)
         {
-            if (!base.ShouldLog(chatMessage)) return false;
+            if (!base.ShouldLog(chatMessage, cleanedSender)) return false;
             if (Config.IncludeAllUsers) return true;
-            if (Config.Users.ContainsKey(chatMessage.CleanedSender)) return true;
-            return Config.IncludeMe && chatMessage.CleanedSender == Myself.FullName;
+            if (Config.Users.ContainsKey(cleanedSender)) return true;
+            return Config.IncludeMe && cleanedSender == Myself.FullName;
         }
     }
 
@@ -375,6 +340,5 @@ public sealed class ChatLogManager : IDisposable
         }
 
         protected override string DefaultFormat => "{0}:{2}:{5}";
-        protected override int DefaultWrapIndentation => 4;
     }
 }

@@ -75,6 +75,8 @@ public sealed partial class Chatter
         {
             Configuration.IsDebug = !Configuration.IsDebug;
             PluginLog.Debug($"Debug mode is {(Configuration.IsDebug ? "on" : "off")}");
+            PluginLog.Debug("");
+            PluginLog.Debug($"Sub-commands are: {DebugChatDump}, {DebugList}");
         }
         else
         {
