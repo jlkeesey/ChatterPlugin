@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Security;
 
-namespace ChatterPlugin;
+namespace Chatter;
 
 /// <summary>
 ///     Basic file system helper functions.

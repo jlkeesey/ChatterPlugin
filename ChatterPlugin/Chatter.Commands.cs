@@ -5,7 +5,7 @@ using Dalamud.Game.Command;
 using Dalamud.Logging;
 using Dalamud.Utility;
 
-namespace ChatterPlugin;
+namespace Chatter;
 
 /// <summary>
 ///     Handles the text commands for this plugin.
@@ -22,7 +22,7 @@ public sealed partial class Chatter
 
     private readonly Dictionary<string, Func<bool>> _debugFlags = new()
     {
-        {"debug", () => Configuration.IsDebug},
+        {"debug", () => Chatter.Configuration.IsDebug},
     };
 
     /// <summary>
@@ -73,8 +73,8 @@ public sealed partial class Chatter
     {
         if (arguments.IsNullOrEmpty())
         {
-            Configuration.IsDebug = !Configuration.IsDebug;
-            PluginLog.Debug($"Debug mode is {(Configuration.IsDebug ? "on" : "off")}");
+            Chatter.Configuration.IsDebug = !Chatter.Configuration.IsDebug;
+            PluginLog.Debug($"Debug mode is {(Chatter.Configuration.IsDebug ? "on" : "off")}");
             PluginLog.Debug("");
             PluginLog.Debug($"Sub-commands are: {DebugChatDump}, {DebugList}");
         }

@@ -1,9 +1,8 @@
 using System.Collections.Generic;
 using Dalamud.Game.Text;
-using Dalamud.Logging;
 using Dalamud.Utility;
 
-namespace ChatterPlugin;
+namespace Chatter;
 
 /// <summary>
 ///     Utilities for working with the <see cref="XivChatType" /> enum.
@@ -27,7 +26,7 @@ internal static class ChatTypeHelper
     {
         if (ChatCodeToShortName.TryGetValue(chatType, out var name)) return name;
         var slug = chatType.GetDetails()?.Slug ?? string.Empty;
-        var defaultValue = Chatter.Configuration.IsDebug ? $"?{(int) chatType}?" : string.Empty;
+        var defaultValue = global::Chatter.Chatter.Configuration.IsDebug ? $"?{(int) chatType}?" : string.Empty;
         return !slug.IsNullOrWhitespace() ? slug : defaultValue;
     }
 }

@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace ChatterPlugin.Localization;
+namespace Chatter.Localization;
 
 /// <summary>
 ///     A localized (translated) message and it's metadata.

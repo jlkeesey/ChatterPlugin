@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Dalamud.Game.Text;
 
-namespace ChatterPlugin;
+namespace Chatter;
 
 /// <summary>
 ///     Contains all of the user configuration settings.

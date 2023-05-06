@@ -1,12 +1,12 @@
 using System.Reflection;
-using ChatterPlugin.Localization;
-using ChatterPlugin.Properties;
-using ChatterPlugin.Windows;
+using Chatter.Localization;
+using Chatter.Properties;
+using Chatter.Windows;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using ImGuiScene;
 
-namespace ChatterPlugin;
+namespace Chatter;
 
 // TODO Add timestamp
 // TODO NodaTime?
@@ -59,7 +59,7 @@ public sealed partial class Chatter : IDalamudPlugin
     private ChatManager ChatManager { get; }
     private ChatLogManager ChatLogManager { get; }
     public WindowSystem WindowSystem { get; private set; }
-    public string Name => "ChatterPlugin";
+    public string Name => "Chatter";
 
     public void Dispose()
     {

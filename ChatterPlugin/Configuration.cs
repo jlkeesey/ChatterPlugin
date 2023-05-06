@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Dalamud.Configuration;
 using Dalamud.Game.Text;
 
-namespace ChatterPlugin;
+namespace Chatter;
 
 /// <summary>
 ///     Contains all of the user configuration settings.
@@ -55,7 +55,7 @@ public partial class Configuration : IPluginConfiguration
     /// <summary>
     ///     The configurations for the individual chat logs.
     /// </summary>
-    public Dictionary<string, ChatLogConfiguration> ChatLogs = new();
+    public Dictionary<string, Configuration.ChatLogConfiguration> ChatLogs = new();
 
 #if DEBUG
     public bool IsDebug = true;
@@ -68,8 +68,8 @@ public partial class Configuration : IPluginConfiguration
     /// <summary>
     /// Adds a log configuration.
     /// </summary>
-    /// <param name="logConfiguration">The <see cref="ChatLogConfiguration"/> to add.</param>
-    public void AddLog(ChatLogConfiguration logConfiguration)
+    /// <param name="logConfiguration">The <see cref="Configuration.ChatLogConfiguration"/> to add.</param>
+    public void AddLog(Configuration.ChatLogConfiguration logConfiguration)
     {
         ChatLogs[logConfiguration.Name] = logConfiguration;
     }
@@ -77,8 +77,8 @@ public partial class Configuration : IPluginConfiguration
     /// <summary>
     /// Removes a log configuration.
     /// </summary>
-    /// <param name="logConfiguration">The <see cref="ChatLogConfiguration"/> to remove.</param>
-    public void RemoveLog(ChatLogConfiguration logConfiguration)
+    /// <param name="logConfiguration">The <see cref="Configuration.ChatLogConfiguration"/> to remove.</param>
+    public void RemoveLog(Configuration.ChatLogConfiguration logConfiguration)
     {
         ChatLogs.Remove(logConfiguration.Name);
     }
@@ -102,7 +102,7 @@ public partial class Configuration : IPluginConfiguration
         if (Dalamud.PluginInterface.GetPluginConfig() is not Configuration config) config = new Configuration();
 
         if (!config.ChatLogs.ContainsKey(AllLogName))
-            config.AddLog(new ChatLogConfiguration(AllLogName, true, includeAllUsers: true, format: "{2}:{0}:{5}"));
+            config.AddLog(new Configuration.ChatLogConfiguration(AllLogName, true, includeAllUsers: true, format: "{2}:{0}:{5}"));
 
 #if DEBUG
         // ReSharper disable StringLiteralTypo

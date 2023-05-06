@@ -1,7 +1,7 @@
 using System;
 using Dalamud.Interface.Windowing;
 
-namespace ChatterPlugin.Windows;
+namespace Chatter.Windows;
 
 /// <summary>
 ///     Manages the top-level windows of the plugin including binding them with the plugin system.
@@ -9,7 +9,7 @@ namespace ChatterPlugin.Windows;
 public sealed class JlkWindowManager : IDisposable
 {
     private readonly Chatter _chatter;
-    private readonly ConfigWindow _configWindow;
+    private readonly global::Chatter.Windows.ConfigWindow _configWindow;
 
     /// <summary>
     ///     Creates the manager, all top-level windows, and binds them where needed.
@@ -19,7 +19,7 @@ public sealed class JlkWindowManager : IDisposable
     {
         _chatter = chatter;
 
-        _configWindow = Add(new ConfigWindow(_chatter.ChatterImage));
+        _configWindow = Add(new global::Chatter.Windows.ConfigWindow(_chatter.ChatterImage));
 
         Dalamud.PluginInterface.UiBuilder.Draw += chatter.WindowSystem.Draw;
         Dalamud.PluginInterface.UiBuilder.OpenConfigUi += ToggleConfig;

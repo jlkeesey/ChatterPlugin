@@ -1,7 +1,7 @@
 ﻿using System;
 using Dalamud.Game.Text;
 
-namespace ChatterPlugin;
+namespace Chatter;
 
 /// <summary>
 ///     Represents a single chat message received.

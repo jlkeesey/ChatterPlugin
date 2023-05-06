@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
+using Chatter.Data;
 
-namespace ChatterPlugin.Data;
+namespace Chatter.Model;
 
 /// <summary>
 ///     Utilities for manipulating <see cref="World" /> objects.

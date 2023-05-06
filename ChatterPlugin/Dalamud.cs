@@ -7,7 +7,7 @@ using Dalamud.Plugin;
 
 // Re Sharper disable AutoPropertyCanBeMadeGetOnly.Local
 
-namespace ChatterPlugin;
+namespace Chatter;
 
 /// <summary>
 ///     Global access to all of the Dalamud services that we use.

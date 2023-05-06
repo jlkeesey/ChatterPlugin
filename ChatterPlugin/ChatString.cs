@@ -1,14 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using ChatterPlugin.Model;
+using Chatter.Model;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
-using Dalamud.Logging;
 using Dalamud.Utility;
-using static ChatterPlugin.Configuration;
+using static Chatter.Configuration;
 
-namespace ChatterPlugin;
+namespace Chatter;
 
 /// <summary>
 ///     A string from the chat system.

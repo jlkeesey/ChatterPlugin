@@ -1,7 +1,7 @@
-﻿using ChatterPlugin.Localization;
-using ChatterPlugin.Model;
+﻿using Chatter.Localization;
+using Chatter.Model;
 
-namespace ChatterPlugin.Windows;
+namespace Chatter.Windows;
 
 /// <summary>
 ///     These are the localized strings that are used in the configuration window.

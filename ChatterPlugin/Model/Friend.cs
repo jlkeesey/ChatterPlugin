@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using ChatterPlugin.Data;
+using Chatter.Data;
 
-namespace ChatterPlugin.Model;
+namespace Chatter.Model;
 
 /// <summary>
 ///     Represents a single FFXIV friend. FFXIV has it's own type but it's not easily consumable by C# so

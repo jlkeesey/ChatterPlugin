@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using ChatterPlugin.Model;
+using Chatter;
+using Chatter.Model;
 using Dalamud.Logging;
 using Dalamud.Utility;
 
-namespace ChatterPlugin;
+namespace Chatter;
 
 /// <summary>
 ///     Manages a set of logs.

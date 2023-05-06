@@ -2,11 +2,11 @@
 using System.Globalization;
 using System.IO;
 using System.Text.Json;
-using ChatterPlugin.Properties;
+using Chatter.Properties;
 using Dalamud.Logging;
 using Dalamud.Utility;
 
-namespace ChatterPlugin.Localization;
+namespace Chatter.Localization;
 
 /// <summary>
 ///     Handles basic message localization.

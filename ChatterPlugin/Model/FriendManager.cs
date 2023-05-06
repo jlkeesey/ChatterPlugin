@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using ChatterPlugin.Data;
 using Dalamud.Memory;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 
-namespace ChatterPlugin.Model;
+namespace Chatter.Model;
 
 /// <summary>
 ///     Utilities for manipulating <see cref="Friend" /> objects.

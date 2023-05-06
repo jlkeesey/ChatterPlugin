@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace ChatterPlugin.Localization;
+namespace Chatter.Localization;
 
 /// <summary>
 ///     A collection of <see cref="LocalizedMessage" /> objects that can be retrieved by a key.

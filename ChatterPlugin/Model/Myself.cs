@@ -1,4 +1,4 @@
-﻿namespace ChatterPlugin.Model;
+﻿namespace Chatter.Model;
 
 /// <summary>
 ///     Information about the player running this plugin.

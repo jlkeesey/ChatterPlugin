@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Dalamud.Logging;
 
-namespace ChatterPlugin;
+namespace Chatter;
 
 /// <summary>
 ///     Helpers for dealing with the private user area characters that FFXIV uses.
