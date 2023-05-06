@@ -85,8 +85,8 @@ public static class SeSpecialCharacters
         {'\uE0BD', "\u29F3"}, // Swoop in filled square
         {'\uE0BE', "\u2B07"}, // Down arrow in filled square
         {'\uE0BF', "\u274E"}, // X in filled square rotated
+        {'\uE0C0', "\u272A"}, // Star in filled square
         {'\uE0C1', "\u2160"}, // Roman numeral I
-        {'\uE0C1', "\u272A"}, // Star in filled square
         {'\uE0C2', "\u2161"}, // Roman numeral II
         {'\uE0C3', "\u2162"}, // Roman numeral III
         {'\uE0C4', "\u2163"}, // Roman numeral IV
